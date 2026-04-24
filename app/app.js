@@ -1,6 +1,11 @@
 const STORAGE_KEY = "devflow-crm-state";
 const API_BASE_URL = "http://localhost:5000";
 const BIFROST_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/bifrost/sync`;
+const PROOF_OF_RESERVE_ORACLE = `${API_BASE_URL}/api/oracle/proof-of-reserve`;
+const RISK_PULSE_ORACLE = `${API_BASE_URL}/api/oracle/risk-pulse`;
+const COLLATERAL_POWER_ORACLE = `${API_BASE_URL}/api/oracle/collateral-power`;
+const HEARTBEAT_ORACLE = `${API_BASE_URL}/api/oracle/heartbeat`;
+const TRADELINE_ORACLE = `${API_BASE_URL}/api/oracle/report-tradeline`;
 const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
 const runtimeState = {
@@ -291,6 +296,7 @@ function render() {
   renderTasks();
   renderActivity();
   runSovereignAnalytics();
+  refreshOracles();
 }
 
 function runSovereignAnalytics() {
@@ -794,6 +800,36 @@ function formatCurrency(value, currency = "USD", fractionDigits = 0) {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits
   }).format(value);
+}
+
+async function fetchOracle(endpoint) {
+  try {
+    var response = await fetch(endpoint, { method: "GET" });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("[ORACLE] Error fetching", endpoint, error.message);
+    return null;
+  }
+}
+
+async function refreshOracles() {
+  var proofData = await fetchOracle(PROOF_OF_RESERVE_ORACLE);
+  var riskData = await fetchOracle(RISK_PULSE_ORACLE);
+  var collateralData = await fetchOracle(COLLATERAL_POWER_ORACLE);
+  var heartbeatData = await fetchOracle(HEARTBEAT_ORACLE);
+  
+  console.log("[ORACLE] Proof of Reserve:", proofData ? proofData.status : "error");
+  console.log("[ORACLE] Risk Pulse:", riskData ? riskData.sentiment : "error");
+  console.log("[ORACLE] Collateral Power:", collateralData ? collateralData.powerTier : "error");
+  console.log("[ORACLE] Heartbeat:", heartbeatData ? heartbeatData.status : "error");
+  
+  return {
+    proof: proofData,
+    risk: riskData,
+    collateral: collateralData,
+    heartbeat: heartbeatData
+  };
 }
 
 function formatSyncLabel(dateValue) {
