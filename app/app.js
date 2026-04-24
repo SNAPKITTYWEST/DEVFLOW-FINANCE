@@ -1,6 +1,7 @@
 const STORAGE_KEY = "devflow-crm-state";
 const API_BASE_URL = "http://localhost:5000";
 const OPEN_COLLECTIVE_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/collective/sync`;
+const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
 const runtimeState = {
   collectiveSyncPending: false
@@ -24,11 +25,9 @@ const createSeedState = () => ({
     { id: crypto.randomUUID(), title: "Share onboarding checklist", owner: "Chris", dueDate: offsetDate(-1), priority: "Low", completed: true }
   ],
   activity: [
-    { id: crypto.randomUUID(), text: "Northwind Retainer moved to Proposal", time: timestampLabel() },
-    { id: crypto.randomUUID(), text: "Lina Torres marked as Customer", time: timestampLabel() },
-    { id: crypto.randomUUID(), text: "Proposal revision task assigned to Jessi", time: timestampLabel() }
+    { id: crypto.randomUUID(), text: "System initialized", time: timestampLabel() }
   ],
-  finance: createFinanceState()
+  collectiveStats: createCollectiveStatsState()
 });
 
 let state = loadState();
@@ -56,7 +55,7 @@ const elements = {
 elements.contactForm.addEventListener("submit", handleContactSubmit);
 elements.dealForm.addEventListener("submit", handleDealSubmit);
 elements.taskForm.addEventListener("submit", handleTaskSubmit);
-elements.syncButton.addEventListener("click", handleCollectiveSync);
+elements.syncButton.addEventListener("click", syncOpenCollective);
 elements.seedButton.addEventListener("click", () => {
   state = createSeedState();
   persistState();
@@ -83,14 +82,24 @@ function loadState() {
 }
 
 function normalizeState(savedState) {
+  const legacyBalance = Number(savedState?.finance?.collectiveBalanceCents || 0) / 100;
+  const legacyLastSync = savedState?.finance?.lastSyncedAt
+    ? formatSyncLabel(savedState.finance.lastSyncedAt)
+    : "Never";
+
   return {
     contacts: Array.isArray(savedState?.contacts) ? savedState.contacts : [],
     deals: Array.isArray(savedState?.deals) ? savedState.deals : [],
     tasks: Array.isArray(savedState?.tasks) ? savedState.tasks : [],
     activity: Array.isArray(savedState?.activity) ? savedState.activity : [],
-    finance: {
-      ...createFinanceState(),
-      ...(savedState?.finance && typeof savedState.finance === "object" ? savedState.finance : {})
+    collectiveStats: {
+      ...createCollectiveStatsState(),
+      ...(savedState?.collectiveStats && typeof savedState.collectiveStats === "object"
+        ? savedState.collectiveStats
+        : {}),
+      balance: Number(savedState?.collectiveStats?.balance ?? legacyBalance ?? 0),
+      currency: String(savedState?.collectiveStats?.currency || savedState?.finance?.collectiveCurrency || "USD"),
+      lastSync: String(savedState?.collectiveStats?.lastSync || legacyLastSync)
     }
   };
 }
@@ -195,14 +204,14 @@ function renderStats() {
 }
 
 function renderFinanceCard() {
-  const pipelineValueCents = getOpenPipelineValueCents();
-  const collectiveBalanceCents = getCollectiveBalanceCents();
-  const ratio = pipelineValueCents > 0 ? collectiveBalanceCents / pipelineValueCents : 0;
+  const pipelineValue = getOpenPipelineValueDollars();
+  const collectiveBalance = getCollectiveBalance();
+  const ratio = pipelineValue > 0 ? collectiveBalance / pipelineValue : 1;
 
   elements.sovereigntyRatio.textContent = ratio.toFixed(2);
   elements.collectiveBalance.textContent = formatCurrency(
-    collectiveBalanceCents / 100,
-    state.finance.collectiveCurrency,
+    collectiveBalance,
+    state.collectiveStats.currency,
     2
   );
   elements.syncButton.disabled = runtimeState.collectiveSyncPending;
@@ -210,8 +219,8 @@ function renderFinanceCard() {
     ? "Syncing Open Collective..."
     : "🔄 Sync Open Collective";
 
-  if (state.finance.lastSyncedAt) {
-    elements.syncButton.title = `Last synced ${formatSyncLabel(state.finance.lastSyncedAt)}`;
+  if (state.collectiveStats.lastSync && state.collectiveStats.lastSync !== "Never") {
+    elements.syncButton.title = `Last synced ${state.collectiveStats.lastSync}`;
   } else {
     elements.syncButton.removeAttribute("title");
   }
@@ -248,6 +257,12 @@ function renderDeals() {
               <span class="meta">${escapeHtml(deal.owner)}</span>
               <span class="badge ${stage.toLowerCase()}">${formatCurrency(deal.value)}</span>
             </div>
+            <div class="task-meta">
+              <span class="meta">Net 30 invoice template</span>
+              <button class="task-toggle" type="button" data-deal-id="${deal.id}">
+                QB Payload
+              </button>
+            </div>
           </article>
         `).join("")
         : '<p class="meta">No deals</p>';
@@ -260,6 +275,12 @@ function renderDeals() {
       `;
     })
     .join("");
+
+  document.querySelectorAll("[data-deal-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      generateQuickBooksPayload(button.dataset.dealId);
+    });
+  });
 }
 
 function renderTasks() {
@@ -290,7 +311,7 @@ function renderTasks() {
     })
     .join("");
 
-  document.querySelectorAll(".task-toggle").forEach((button) => {
+  document.querySelectorAll("[data-task-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const task = state.tasks.find((item) => item.id === button.dataset.taskId);
       if (!task) {
@@ -316,49 +337,127 @@ function renderActivity() {
     .join("");
 }
 
-async function handleCollectiveSync() {
+async function syncOpenCollective() {
   runtimeState.collectiveSyncPending = true;
+  pushActivity("📡 Initiating Open Collective financial sync...");
   renderFinanceCard();
+  renderActivity();
 
   try {
-    const response = await fetch(OPEN_COLLECTIVE_SYNC_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(payload.error || "Open Collective sync failed.");
-    }
+    const collectiveSnapshot = await fetchCollectiveBalance();
 
     state = {
       ...state,
-      finance: {
-        ...state.finance,
-        collectiveBalanceCents: Number(payload.balanceCents) || 0,
-        collectiveCurrency: String(payload.currency || "USD"),
-        lastSyncedAt: String(payload.syncedAt || new Date().toISOString())
+      collectiveStats: {
+        balance: collectiveSnapshot.balance,
+        currency: collectiveSnapshot.currency,
+        lastSync: timestampLabel()
       }
     };
     pushActivity(
-      `Synced Open Collective balance at ${formatCurrency(
-        state.finance.collectiveBalanceCents / 100,
-        state.finance.collectiveCurrency,
-        2
-      )}`
+      `✅ Sync Success: Liquid balance is ${formatCurrency(state.collectiveStats.balance, state.collectiveStats.currency, 2)}`
     );
     persistState();
     render();
   } catch (error) {
-    pushActivity(`Open Collective sync warning: ${error.message}`);
+    pushActivity(`❌ Sync Error: ${error.message || "Connection to Open Collective failed"}`);
     persistState();
     render();
   } finally {
     runtimeState.collectiveSyncPending = false;
     renderFinanceCard();
   }
+}
+
+async function fetchCollectiveBalance() {
+  try {
+    return await fetchCollectiveBalanceFromBackend();
+  } catch {
+    return fetchCollectiveBalanceDirect();
+  }
+}
+
+async function fetchCollectiveBalanceFromBackend() {
+  const response = await fetch(OPEN_COLLECTIVE_SYNC_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error || "Backend Open Collective sync failed.");
+  }
+
+  return {
+    balance: Number(payload.balanceCents || 0) / 100,
+    currency: String(payload.currency || "USD")
+  };
+}
+
+async function fetchCollectiveBalanceDirect() {
+  const query = `
+    query getCollective($slug: String!) {
+      account(slug: $slug) {
+        name
+        stats {
+          balance {
+            valueInCents
+            currency
+          }
+        }
+      }
+    }
+  `;
+  const response = await fetch("https://api.opencollective.com/graphql/v2", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      query,
+      variables: { slug: OPEN_COLLECTIVE_SLUG }
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || Array.isArray(result.errors) && result.errors.length > 0) {
+    throw new Error(result.errors?.[0]?.message || "Connection to Open Collective failed.");
+  }
+
+  const balanceCents = Number(result.data?.account?.stats?.balance?.valueInCents || 0);
+  const currency = String(result.data?.account?.stats?.balance?.currency || "USD");
+
+  return {
+    balance: balanceCents / 100,
+    currency
+  };
+}
+
+function generateQuickBooksPayload(dealId) {
+  const deal = state.deals.find(d => d.id === dealId);
+  if (!deal) return;
+
+  const invoicePayload = {
+    Line: [{
+        DetailType: "SalesItemLineDetail",
+        Amount: deal.value,
+        SalesItemLineDetail: {
+          ItemRef: { name: "Consulting Services", value: "1" },
+          Qty: 1,
+          UnitPrice: deal.value
+        }
+      }
+    }],
+    CustomerRef: { name: deal.title.split(" ")[0] }, // Fallback to title prefix
+    DueDate: offsetDate(30) // Default Net 30
+  };
+
+  console.log("QuickBooks Payload Generated:", invoicePayload);
+  pushActivity(`🧾 Generated QB Invoice Payload for ${deal.title}`);
+  alert(`Invoice structure for "${deal.title}" generated. Check console for payload.`);
+  render();
 }
 
 function getOpenDeals() {
@@ -369,26 +468,18 @@ function getOpenPipelineValueDollars() {
   return getOpenDeals().reduce((total, deal) => total + deal.value, 0);
 }
 
-function getOpenPipelineValueCents() {
-  return getOpenDeals().reduce((total, deal) => total + normalizeCurrencyToCents(deal.value), 0);
-}
-
-function getCollectiveBalanceCents() {
-  return Number.isFinite(state.finance.collectiveBalanceCents)
-    ? state.finance.collectiveBalanceCents
+function getCollectiveBalance() {
+  return Number.isFinite(state.collectiveStats.balance)
+    ? state.collectiveStats.balance
     : 0;
 }
 
-function createFinanceState() {
+function createCollectiveStatsState() {
   return {
-    collectiveBalanceCents: 0,
-    collectiveCurrency: "USD",
-    lastSyncedAt: ""
+    balance: 0,
+    currency: "USD",
+    lastSync: "Never"
   };
-}
-
-function normalizeCurrencyToCents(value) {
-  return Math.round(Number(value || 0) * 100);
 }
 
 function formatCurrency(value, currency = "USD", fractionDigits = 0) {

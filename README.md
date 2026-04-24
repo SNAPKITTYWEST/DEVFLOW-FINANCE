@@ -1,4 +1,8 @@
-DevFlow Finance
+# SnapKitty Collective | DevFlow Finance
+
+<p align="center">
+  <img src="app/logo.svg" width="200" alt="SnapKitty Collective Logo">
+</p>
 
 DevFlow Finance is an open-source infrastructure layer that enables independent workers, startups, and collectives to coordinate:
 
