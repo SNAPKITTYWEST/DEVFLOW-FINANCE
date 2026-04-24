@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id           String   @id @default(uuid())
+  name         String
+  company      String
+  email        String   @unique
+  status       String
+  qbCustomerId String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deals        Deal[]
+
+  @@index([status])
+}
+
+model Deal {
+  id          String   @id @default(uuid())
+  title       String
+  owner       String
+  valueCents  Int
+  stage       String
+  qbInvoiceId String?  @unique
+  contactId   String?
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([stage])
+  @@index([contactId])
+}
+
+model Task {
+  id        String   @id @default(uuid())
+  title     String
+  owner     String
+  dueDate   DateTime
+  priority  String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([completed, dueDate])
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  text      String
+  category  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

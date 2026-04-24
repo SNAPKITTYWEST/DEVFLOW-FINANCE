@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevFlow CRM</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="./logo.svg" alt="SnapKitty Collective" style="width: 120px; height: 120px; margin-bottom: 0.5rem; display: block;">
+        <p class="eyebrow">SnapKitty Collective</p>
+        <h1>CRM Workspace</h1>
+      </div>
+      <nav class="nav">
+        <a href="#overview">Overview</a>
+        <a href="#contacts">Contacts</a>
+        <a href="#deals">Deals</a>
+        <a href="#tasks">Tasks</a>
+      </nav>
+      <section class="sidebar-card">
+        <p class="sidebar-label">Pipeline Health</p>
+        <strong id="sidebar-health">Stable</strong>
+        <span id="sidebar-health-detail">2 deals closing this week</span>
+      </section>
+    </aside>
+
+    <main class="content">
+      <header class="hero" id="overview">
+        <div>
+          <p class="eyebrow">Customer Operations</p>
+          <h2>Track relationships, revenue, and follow-ups in one place.</h2>
+        </div>
+        <button class="primary-button" id="seed-button" type="button">Reset Demo Data</button>
+      </header>
+
+      <section class="stats-grid" aria-label="CRM summary">
+        <article class="stat-card">
+          <span>Contacts</span>
+          <strong id="contacts-count">0</strong>
+          <small>active records</small>
+        </article>
+        <article class="stat-card">
+          <span>Open Deals</span>
+          <strong id="open-deals-count">0</strong>
+          <small>pipeline opportunities</small>
+        </article>
+        <article class="stat-card">
+          <span>Pipeline Value</span>
+          <strong id="pipeline-value">$0</strong>
+          <small>weighted total</small>
+        </article>
+        <article class="stat-card">
+          <span>Due Tasks</span>
+          <strong id="due-tasks-count">0</strong>
+          <small>next 7 days</small>
+        </article>
+      </section>
+
+      <section class="finance-grid" aria-label="Financial controls">
+        <section class="card financial-card">
+          <h4>Sovereignty Metric</h4>
+          <div id="sovereignty-ratio" class="stat-value">0.00</div>
+          <p class="meta">Liquid-to-Pipeline Ratio</p>
+
+          <hr>
+
+          <h4>Inflow Balance</h4>
+          <div id="collective-balance" class="stat-value">$0</div>
+          <button id="sync-button" type="button" class="btn-sync">🔄 Sync Open Collective</button>
+        </section>
+      </section>
+
+      <section class="grid two-column">
+        <article class="panel" id="contacts">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">People</p>
+              <h3>Contacts</h3>
+            </div>
+          </div>
+
+          <form id="contact-form" class="form-grid">
+            <input name="name" type="text" placeholder="Full name" required>
+            <input name="company" type="text" placeholder="Company" required>
+            <input name="email" type="email" placeholder="Email" required>
+            <select name="status" required>
+              <option value="Lead">Lead</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Customer">Customer</option>
+            </select>
+            <button class="secondary-button" type="submit">Add Contact</button>
+          </form>
+
+          <div id="contacts-list" class="stack"></div>
+        </article>
+
+        <article class="panel" id="deals">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Revenue</p>
+              <h3>Deals</h3>
+            </div>
+          </div>
+
+          <form id="deal-form" class="form-grid">
+            <input name="title" type="text" placeholder="Deal title" required>
+            <input name="owner" type="text" placeholder="Owner" required>
+            <input name="value" type="number" min="0" step="100" placeholder="Value" required>
+            <select name="stage" required>
+              <option value="Discovery">Discovery</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Won">Won</option>
+            </select>
+            <button class="secondary-button" type="submit">Add Deal</button>
+          </form>
+
+          <div id="deals-board" class="deal-board"></div>
+        </article>
+      </section>
+
+      <section class="grid two-column">
+        <article class="panel" id="tasks">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Execution</p>
+              <h3>Tasks</h3>
+            </div>
+          </div>
+
+          <form id="task-form" class="form-grid">
+            <input name="title" type="text" placeholder="Task title" required>
+            <input name="owner" type="text" placeholder="Owner" required>
+            <input name="dueDate" type="date" required>
+            <select name="priority" required>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+            <button class="secondary-button" type="submit">Add Task</button>
+          </form>
+
+          <div id="tasks-list" class="stack"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Context</p>
+              <h3>Recent Activity</h3>
+            </div>
+          </div>
+
+          <div id="activity-list" class="stack"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
