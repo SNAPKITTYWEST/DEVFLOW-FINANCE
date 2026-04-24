@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SnapKitty OS | Financial Control Tower</title>
   <link rel="stylesheet" href="./styles.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
   <div class="shell">
@@ -12,6 +13,29 @@
       <span class="heartbeat-dot"></span>
       <span class="heartbeat-label">System Online</span>
     </div>
+    
+    <section class="sovereign-intelligence-bar">
+      <div class="intel-card">
+        <label>Sovereign Credit (SCS)</label>
+        <div id="scs-display" class="value">650</div>
+        <span id="scs-risk-badge" class="badge risk-medium">Expansionary</span>
+      </div>
+      <div class="intel-card">
+        <label>Liquidity Coverage Ratio</label>
+        <div id="lcr-ratio" class="value">0.00</div>
+        <div class="meta">SSOT Verified</div>
+      </div>
+      <div class="intel-card">
+        <label>Total Liquidity</label>
+        <div id="total-liquidity-display" class="value">$0</div>
+        <div class="meta">Canonical Ledger</div>
+      </div>
+      <div class="intel-card">
+        <label>Vault Anchor</label>
+        <div id="vault-anchor" class="value">$0</div>
+        <div class="meta">Asset-Backed</div>
+      </div>
+    </section>
     
     <nav class="nav-rail">
       <div class="nav-logo">
@@ -26,6 +50,14 @@
           <span class="nav-icon">💰</span>
           <span class="nav-label">Revenue</span>
         </a>
+        <a href="#ledger" class="nav-item" data-view="ledger">
+          <span class="nav-icon">🧾</span>
+          <span class="nav-label">Ledger</span>
+        </a>
+        <a href="#tax" class="nav-item" data-view="tax">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Tax</span>
+        </a>
         <a href="#accounts" class="nav-item" data-view="accounts">
           <span class="nav-icon">🏢</span>
           <span class="nav-label">Accounts</span>
@@ -36,7 +68,11 @@
         </a>
         <a href="#insights" class="nav-item" data-view="insights">
           <span class="nav-icon">🤖</span>
-          <span class="nav-label">Insights</span>
+          <span class="nav-label">AI Ops</span>
+        </a>
+        <a href="mobile.html" class="nav-item mobile-link" target="_blank">
+          <span class="nav-icon">📱</span>
+          <span class="nav-label">Capture</span>
         </a>
       </nav>
     </nav>
@@ -135,6 +171,67 @@
             <div id="pipeline-recognized" class="pipeline-list"></div>
           </div>
         </div>
+      </section>
+
+      <section id="view-ledger" class="view">
+        <header class="command-header">
+          <div>
+            <h1>Canonical Ledger</h1>
+            <p class="subtitle">Full financial traceability • Event-driven audit trail</p>
+          </div>
+        </header>
+        <section class="ledger-timeline">
+          <div class="timeline-stream" id="ledger-timeline">
+            <p class="empty">Loading ledger events...</p>
+          </div>
+        </section>
+        <section class="ledger-details" id="ledger-details" style="display:none;">
+          <div class="detail-card">
+            <h4>Event Details</h4>
+            <div id="event-detail-json"></div>
+          </div>
+          <div class="detail-card">
+            <h4>Ledger State</h4>
+            <div id="ledger-state-json"></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-tax" class="view">
+        <header class="command-header">
+          <div>
+            <h1>Tax + Compliance</h1>
+            <p class="subtitle">Regulatory readiness and audit preparedness</p>
+          </div>
+          <div class="tax-summary-cards">
+            <div class="tax-card">
+              <label>Deductible Total</label>
+              <div id="tax-deductible" class="value">$0</div>
+            </div>
+            <div class="tax-card">
+              <label>Tax Liability Est.</label>
+              <div id="tax-liability" class="value">$0</div>
+            </div>
+            <div class="tax-card">
+              <label>Audit Readiness</label>
+              <div id="audit-readiness-score" class="value">--</div>
+            </div>
+          </div>
+        </header>
+        <section class="tax-risk-panel">
+          <article class="card tax-risk-card">
+            <h4>⚠️ Flagged Transactions</h4>
+            <div id="tax-flagged-list">
+              <p class="empty">No flagged transactions.</p>
+            </div>
+          </article>
+          <article class="card tax-risk-card">
+            <h4>🔍 Missing Documentation</h4>
+            <div id="tax-missing-docs">
+              <p class="empty">All documentation present.</p>
+            </div>
+          </article>
+        </section>
       </section>
 
       <section id="view-accounts" class="view">

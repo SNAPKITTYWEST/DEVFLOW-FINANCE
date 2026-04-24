@@ -11,7 +11,49 @@
   --success: #3fb950;
   --danger: #f85149;
   --shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  --vault-purple: #2d1b4d;
+  --sovereign-teal: #0d6b50;
+  --intel-border: #d1d9e6;
 }
+
+.sovereign-intelligence-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--intel-border);
+  border: 1px solid var(--intel-border);
+  margin: 0 0 1rem 0;
+}
+
+.intel-card {
+  background: white;
+  padding: 1rem;
+}
+
+.intel-card label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  color: #666;
+}
+
+.intel-card .value {
+  font-family: 'Courier New', monospace;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--vault-purple);
+  margin: 0.25rem 0;
+}
+
+.intel-card .meta {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.intel-card .badge.risk-low { background: #d1fae5; color: #065f46; }
+.intel-card .badge.risk-medium { background: #fef3c7; color: #92400e; }
+.intel-card .badge.risk-high { background: #fee2e2; color: #991b1b; }
 
 * {
   box-sizing: border-box;
@@ -263,6 +305,148 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+}
+
+.ledger-timeline {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.timeline-stream {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.timeline-event {
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.timeline-event:hover {
+  background: var(--panel-strong);
+}
+
+.timeline-event .event-header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-event .event-type {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.timeline-event .event-version {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.timeline-event .event-immutable {
+  color: var(--success);
+}
+
+.timeline-event .event-time {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.timeline-event .event-text {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-event .event-id {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: monospace;
+}
+
+.ledger-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.detail-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.detail-card h4 {
+  margin: 0 0 0.5rem;
+}
+
+.detail-card pre {
+  font-size: 0.75rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.tax-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tax-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.tax-card label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+}
+
+.tax-card .value {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+.tax-card .value.score-good { color: var(--success); }
+.tax-card .value.score-warning { color: var(--warning); }
+.tax-card .value.score-danger { color: var(--danger); }
+
+.tax-risk-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tax-risk-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.flagged-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
 }
 
 .pipeline-column {

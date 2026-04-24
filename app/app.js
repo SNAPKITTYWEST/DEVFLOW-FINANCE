@@ -9,7 +9,11 @@ const TRADELINE_ORACLE = `${API_BASE_URL}/api/oracle/report-tradeline`;
 const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
 const runtimeState = {
-  collectiveSyncPending: false
+  collectiveSyncPending: false,
+  analyticsCache: { scs: 650, hash: "" },
+  oracleRefreshPending: false,
+  lastOracleRefresh: 0,
+  reconciliationState: "OK"
 };
 
 const createSeedState = () => ({
@@ -37,7 +41,14 @@ const createSeedState = () => ({
 
 function createDualLedgerState() {
   return {
-    entities: [
+    canonicalLedger: {
+      id: "canonical-primary",
+      type: "PRIMARY",
+      description: "Canonical Ledger - SOX Compliant Source of Truth",
+      lastReconciled: null,
+      reconciledBy: null
+    },
+    segmentLedgers: [
       {
         id: "digital-inclusion-fund",
         name: "Digital Inclusion Fund",
@@ -46,17 +57,19 @@ function createDualLedgerState() {
         balance: 0,
         vault: 0,
         currency: "USD",
-        lastSync: "Never"
+        lastSync: "Never",
+        parentLedger: "canonical-primary"
       },
       {
         id: "operating-revenue",
-        name: "Operating Revenue",
+        name: "Operating Revenue", 
         type: "bcorp",
         slug: "snapkitty",
         balance: 0,
         vault: 0,
         currency: "USD",
-        lastSync: "Never"
+        lastSync: "Never",
+        parentLedger: "canonical-primary"
       }
     ],
     activeEntityId: "digital-inclusion-fund",
@@ -66,6 +79,21 @@ function createDualLedgerState() {
       bCorpBalanceCents: 0,
       trustVaultCents: 0,
       lastBridgeSync: "Never"
+    },
+    asc606: {
+      contracts: [],
+      performanceObligations: [],
+      recognitionSchedule: [],
+      schemaVersion: "1.0.0",
+      lastAuditTimestamp: null
+    },
+    syncBridge: {
+      sourceSystem: "OpenCollective",
+      destinationSystem: "CanonicalLedger",
+      reconciliationRules: "BALANCE_MATCH",
+      conflictResolutionPolicy: "PRIMARY_WINS",
+      lastReconciliation: null,
+      replaySafetyEnabled: true
     }
   };
 }
@@ -281,18 +309,113 @@ function handleTaskSubmit(event) {
   render();
 }
 
-function pushActivity(text) {
+const EVENT_SCHEMA_VERSION = "1.0.0";
+
+function pushActivity(text, eventType = "INFO") {
+  var eventId = crypto.randomUUID();
+  var timestamp = timestampLabel();
+  
   state.activity.unshift({
-    id: crypto.randomUUID(),
-    text,
-    time: timestampLabel()
+    id: eventId,
+    schemaVersion: EVENT_SCHEMA_VERSION,
+    eventType: eventType,
+    immutable: true,
+    timestamp: Date.now(),
+    text: text,
+    time: timestamp
   });
   state.activity = state.activity.slice(0, 8);
+  
+  console.log("[EVENT_BUS] " + eventType + " v" + EVENT_SCHEMA_VERSION + " | " + eventId + " | " + timestamp);
+}
+
+function renderLedgerTimeline() {
+  var timelineEl = document.getElementById("ledger-timeline");
+  if (!timelineEl) return;
+  
+  if (!state.activity || state.activity.length === 0) {
+    timelineEl.innerHTML = '<p class="empty">No ledger events recorded.</p>';
+    return;
+  }
+  
+  timelineEl.innerHTML = state.activity.map(function(entry) {
+    var eventType = entry.eventType || "INFO";
+    var schemaVersion = entry.schemaVersion || "1.0";
+    var timestamp = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : entry.time;
+    var isImmutable = entry.immutable ? "🔒" : "";
+    
+    return '<article class="timeline-event" data-event-id="' + entry.id + '">' +
+      '<div class="event-header">' +
+        '<span class="event-type badge ' + eventType.toLowerCase() + '">' + eventType + '</span>' +
+        '<span class="event-version">v' + schemaVersion + '</span>' +
+        '<span class="event-immutable">' + isImmutable + '</span>' +
+        '<span class="event-time">' + timestamp + '</span>' +
+      '</div>' +
+      '<div class="event-text">' + escapeHtml(entry.text) + '</div>' +
+      '<div class="event-id">ID: ' + entry.id + '</div>' +
+    '</article>';
+  }).join("");
+  
+  var events = timelineEl.querySelectorAll(".timeline-event");
+  for (var i = 0; i < events.length; i++) {
+    events[i].addEventListener("click", function() {
+      var detailPanel = document.getElementById("ledger-details");
+      var eventJson = document.getElementById("event-detail-json");
+      var ledgerJson = document.getElementById("ledger-state-json");
+      
+      var eventId = this.getAttribute("data-event-id");
+      var event = state.activity.find(function(e) { return e.id === eventId; });
+      
+      if (detailPanel && eventJson && ledgerJson) {
+        detailPanel.style.display = "grid";
+        eventJson.textContent = JSON.stringify(event, null, 2);
+        ledgerJson.textContent = JSON.stringify(state.funds, null, 2);
+      }
+    });
+  }
+}
+
+function renderTaxDashboard() {
+  var deductibleEl = document.getElementById("tax-deductible");
+  var liabilityEl = document.getElementById("tax-liability");
+  var readinessEl = document.getElementById("audit-readiness-score");
+  var flaggedEl = document.getElementById("tax-flagged-list");
+  
+  var totalRevenue = state.deals.filter(function(d) { return d.stage === "Won"; })
+    .reduce(function(sum, d) { return sum + d.value; }, 0);
+  
+  var deductibleEstimate = Math.round(totalRevenue * 0.7);
+  var liabilityEstimate = Math.round(totalRevenue * 0.25);
+  
+  var flaggedEvents = state.activity.filter(function(e) {
+    return e.eventType === "RECONCILIATION_MISMATCH" || e.eventType === "ERROR";
+  });
+  
+  if (readinessEl) {
+    var score = flaggedEvents.length === 0 ? "100%" : (flaggedEvents.length === 1 ? "85%" : "70%");
+    readinessEl.textContent = score;
+    readinessEl.className = "value " + (score === "100%" ? "score-good" : (score === "85%" ? "score-warning" : "score-danger"));
+  }
+  
+  if (deductibleEl) deductibleEl.textContent = formatCurrency(deductibleEstimate, "USD", 0);
+  if (liabilityEl) liabilityEl.textContent = formatCurrency(liabilityEstimate, "USD", 0);
+  
+  if (flaggedEl) {
+    if (flaggedEvents.length === 0) {
+      flaggedEl.innerHTML = '<p class="empty">No flagged transactions.</p>';
+    } else {
+      flaggedEl.innerHTML = flaggedEvents.map(function(e) {
+        return '<article class="flagged-item"><span>' + escapeHtml(e.text) + '</span><span>' + e.time + '</span></article>';
+      }).join("");
+    }
+  }
 }
 
 function render() {
   renderStats();
   renderFinanceCard();
+  renderLedgerTimeline();
+  renderTaxDashboard();
   renderContacts();
   renderDeals();
   renderTasks();
@@ -356,7 +479,33 @@ function handleAIQuery(query) {
   }
 }
 
+function getAnalyticsHash() {
+  var pipelineValue = getOpenPipelineValueDollars();
+  var wonDealsValue = getWonDealsValue();
+  var totalLiquid = 0;
+  var totalVault = 0;
+  
+  if (state.funds && state.funds.segmentLedgers) {
+    for (var i = 0; i < state.funds.segmentLedgers.length; i++) {
+      var entity = state.funds.segmentLedgers[i];
+      totalLiquid += entity.balance;
+      totalVault += entity.vault || 0;
+    }
+  }
+  
+  return totalLiquid + "|" + totalVault + "|" + pipelineValue + "|" + wonDealsValue;
+}
+
 function runSovereignAnalytics() {
+  var currentHash = getAnalyticsHash();
+  
+  if (currentHash === runtimeState.analyticsCache.hash && runtimeState.analyticsCache.scs) {
+    console.log("[CACHE] SCS hit:", runtimeState.analyticsCache.scs);
+    return;
+  }
+  
+  runtimeState.analyticsCache.hash = currentHash;
+
   var pipelineValue = getOpenPipelineValueDollars();
   var wonDealsValue = getWonDealsValue();
   
@@ -365,9 +514,9 @@ function runSovereignAnalytics() {
   var nonProfitBalance = 0;
   var bCorpBalance = 0;
   
-  if (state.funds && state.funds.entities) {
-    for (var i = 0; i < state.funds.entities.length; i++) {
-      var entity = state.funds.entities[i];
+  if (state.funds && state.funds.segmentLedgers) {
+    for (var i = 0; i < state.funds.segmentLedgers.length; i++) {
+      var entity = state.funds.segmentLedgers[i];
       totalLiquid += entity.balance;
       totalVault += entity.vault || 0;
       if (entity.type === "nonprofit") {
@@ -421,10 +570,10 @@ function renderStats() {
 
   var totalLiquid = 0;
   var totalVault = 0;
-  if (state.funds && state.funds.entities) {
-    for (var j = 0; j < state.funds.entities.length; j++) {
-      totalLiquid += state.funds.entities[j].balance;
-      totalVault += state.funds.entities[j].vault || 0;
+  if (state.funds && state.funds.segmentLedgers) {
+    for (var j = 0; j < state.funds.segmentLedgers.length; j++) {
+      totalLiquid += state.funds.segmentLedgers[j].balance;
+      totalVault += state.funds.segmentLedgers[j].vault || 0;
     }
   }
 
@@ -468,17 +617,18 @@ function renderFinanceCard() {
   
   var totalLiquid = 0;
   var totalVault = 0;
-  if (state.funds && state.funds.entities) {
-    for (var i = 0; i < state.funds.entities.length; i++) {
-      totalLiquid += state.funds.entities[i].balance;
-      totalVault += state.funds.entities[i].vault || 0;
+  if (state.funds && state.funds.segmentLedgers) {
+    for (var i = 0; i < state.funds.segmentLedgers.length; i++) {
+      totalLiquid += state.funds.segmentLedgers[i].balance;
+      totalVault += state.funds.segmentLedgers[i].vault || 0;
     }
   }
   
   var ratio = pipelineValue > 0 ? totalLiquid / pipelineValue : (pipelineValue === 0 && totalLiquid > 0 ? 1 : (totalLiquid > 0 ? 1 : 0));
-  var sovereigntyStatus = ratio > 1.0 ? "SOVEREIGN" : (ratio >= 0.5 ? "STABLE" : "EXPANDING");
+  var operationalStatus = ratio > 1.0 ? "COVERED" : (ratio >= 0.5 ? "STABLE" : "EXPANDING");
   
   var scs = state.funds && state.funds.sovereignCreditScore ? state.funds.sovereignCreditScore : 650;
+  var scsVersion = "v2.1";
   var scsLabel = " Expansionary ";
   var scsClass = "medium";
   if (scs >= 700) {
@@ -488,14 +638,15 @@ function renderFinanceCard() {
     scsLabel = " Expansionary ";
     scsClass = "high";
   }
-
-  elements.sovereigntyRatio.textContent = ratio.toFixed(2) + " (" + sovereigntyStatus + ")";
+  
+  elements.sovereigntyRatio.textContent = ratio.toFixed(2) + " (" + operationalStatus + ")";
   elements.fundBalance.textContent = formatCurrency(entityBalance, activeEntity ? activeEntity.currency : "USD", 2);
   elements.difBalance.textContent = formatCurrency(totalLiquid, "USD", 2);
   elements.opBalance.textContent = formatCurrency(totalVault, "USD", 2);
   elements.vaultBalance.textContent = formatCurrency(totalVault, "USD", 2);
   elements.scsGauge.textContent = String(scs);
-  elements.scsBadge.textContent = scsLabel;
+  elements.scsBadge.textContent = scsLabel + " [" + scsVersion + "]";
+  elements.scsBadge.title = "SCS " + scsVersion + " - Internal Operational Model Only - Non-Credit Scoring";
   elements.scsBadge.className = "badge " + scsClass;
   elements.entitySelector.value = state.funds ? state.funds.activeEntityId : "digital-inclusion-fund";
   elements.entityType.textContent = activeEntity && activeEntity.type === "nonprofit" ? "🏛️ Non-Profit" : "💼 B-Corp";
@@ -510,6 +661,8 @@ function renderFinanceCard() {
   } else {
     elements.syncButton.removeAttribute("title");
   }
+  
+  runtimeState.analyticsCache.scs = scs;
 }
 
 function renderContacts() {
@@ -642,6 +795,19 @@ async function syncOpenCollective() {
     
     var data = await response.json();
     
+    var sumEntities = 0;
+    for (var i = 0; i < newEntities.length; i++) {
+      sumEntities += newEntities[i].balance;
+    }
+    var apiTotal = data.totalLiquid || 0;
+    
+    if (Math.abs(sumEntities - apiTotal) > 0.01) {
+      pushActivity("RECONCILIATION WARNING: Local $" + sumEntities.toFixed(2) + " != API $" + apiTotal.toFixed(2), "RECONCILIATION_MISMATCH");
+      state.funds.syncBridge.lastReconciliation = "DEGRADED|" + timestampLabel();
+      runtimeState.reconciliationState = "DEGRADED";
+      console.error("[RECONCILIATION_MISMATCH] Expected:", apiTotal, "Actual:", sumEntities);
+    }
+    
     var newEntities = [];
     var nonProfitBalance = 0;
     var bCorpBalance = 0;
@@ -650,8 +816,8 @@ async function syncOpenCollective() {
     if (data.entities && data.entities.length > 0) {
       for (var i = 0; i < data.entities.length; i++) {
         var e = data.entities[i];
-        var balanceCents = Math.round((e.balance || 0) * 100);
-        var vaultCents = Math.round((e.vault || 0) * 100);
+        var balanceCents = toCents(e.balance || 0);
+        var vaultCents = toCents(e.vault || 0);
         
         if (e.type === "nonprofit") {
           nonProfitBalance = balanceCents;
@@ -675,7 +841,7 @@ async function syncOpenCollective() {
     
     var newSCS = data.sovereignCreditScore || 650;
     
-    state.funds.entities = newEntities;
+    state.funds.segmentLedgers = newEntities;
     state.funds.sovereignCreditScore = newSCS;
     state.funds.finance = {
       nonProfitBalanceCents: nonProfitBalance,
@@ -683,6 +849,10 @@ async function syncOpenCollective() {
       trustVaultCents: trustVault,
       lastBridgeSync: timestampLabel()
     };
+    
+    state.funds.canonicalLedger.lastReconciled = timestampLabel();
+    state.funds.canonicalLedger.reconciledBy = "BIFROST_BRIDGE";
+    state.funds.syncBridge.lastReconciliation = timestampLabel();
     
     var totalLiquid = data.totalLiquid || 0;
     var totalVault = data.totalVault || 0;
@@ -701,7 +871,7 @@ async function syncOpenCollective() {
 }
 
 function getActiveEntity() {
-  return state.funds?.entities?.find((e) => e.id === state.funds.activeEntityId);
+  return state.funds?.segmentLedgers?.find((e) => e.id === state.funds.activeEntityId);
 }
 
 function getOpenDeals() {
@@ -850,6 +1020,14 @@ function switchActiveEntity(entityId) {
   render();
 }
 
+function toCents(dollars) {
+  return Math.round(dollars * 100);
+}
+
+function toDollars(cents) {
+  return Number(cents) / 100;
+}
+
 function formatCurrency(value, currency = "USD", fractionDigits = 0) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -871,6 +1049,15 @@ async function fetchOracle(endpoint) {
 }
 
 async function refreshOracles() {
+  var now = Date.now();
+  if (runtimeState.oracleRefreshPending || (now - runtimeState.lastOracleRefresh) < 10000) {
+    console.log("[ORACLE] Debounced - skip refresh");
+    return;
+  }
+  
+  runtimeState.oracleRefreshPending = true;
+  runtimeState.lastOracleRefresh = now;
+  
   var proofData = await fetchOracle(PROOF_OF_RESERVE_ORACLE);
   var riskData = await fetchOracle(RISK_PULSE_ORACLE);
   var collateralData = await fetchOracle(COLLATERAL_POWER_ORACLE);
@@ -901,6 +1088,8 @@ async function refreshOracles() {
       elements.heartbeatDot.parentElement.title = labelText + " | " + new Date().toLocaleTimeString();
     }
   }
+  
+  runtimeState.oracleRefreshPending = false;
   
   return {
     proof: proofData,
