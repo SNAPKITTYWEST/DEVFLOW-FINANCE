@@ -1,12 +1,13 @@
 {
   "name": "snapkitty-api",
   "version": "1.0.0",
-  "description": "SnapKitty Trailblazer API",
+  "description": "SnapKitty Sovereign OS - Federated Financial Core API",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
     "prisma:generate": "prisma generate",
+    "build": "prisma generate",
     "test": "echo \"No tests configured\""
   },
   "keywords": [],

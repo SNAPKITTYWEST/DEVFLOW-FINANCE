@@ -1288,6 +1288,670 @@ app.get("/api/revenue/rules", async (req, res, next) => {
 });
 
 const PORT = Number.parseInt(process.env.PORT, 10) || 5000;
+
+let QuickBooks;
+let Procurement;
+try {
+  QuickBooks = require("./services/quickbooks");
+  Procurement = require("./services/procurement");
+} catch (e) {
+  console.log("[SERVICE] QuickBooks/Procurement not available");
+}
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: "Authorization required" });
+  }
+  next();
+}
+
+function requireRole(...roles) {
+  return async (req, res, next) => {
+    const userId = req.headers["x-user-id"];
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !roles.includes(user.role)) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    next();
+  };
+}
+
+app.post("/auth/register", async (req, res, next) => {
+  try {
+    var email = String(req.body?.email || "").trim().toLowerCase();
+    var password = String(req.body?.password || "");
+    var name = String(req.body?.name || "").trim();
+    var companyName = String(req.body?.companyName || "").trim();
+
+    if (!email || !password || !name) {
+      throw createHttpError(400, "email, password, and name are required.");
+    }
+
+    var existingUser = await prisma.user.findUnique({ where: { email: email } });
+    if (existingUser) {
+      throw createHttpError(409, "User already exists.");
+    }
+
+    const company = await prisma.company.create({
+      data: {
+        name: companyName || name + "'s Company",
+        domain: email.split("@")[1]
+      }
+    });
+
+    var user = await prisma.user.create({
+      data: {
+        email: email,
+        passwordHash: hashPassword(password),
+        name: name,
+        role: "admin"
+      }
+    });
+
+    await prisma.companyUser.create({
+      data: {
+        companyId: company.id,
+        userId: user.id,
+        role: "owner"
+      }
+    });
+
+    res.status(201).json({
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      company: { id: company.id, name: company.name }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/auth/login", async (req, res, next) => {
+  try {
+    var email = String(req.body?.email || "").trim().toLowerCase();
+    var password = String(req.body?.password || "");
+
+    var user = await prisma.user.findUnique({ where: { email: email } });
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      throw createHttpError(401, "Invalid credentials.");
+    }
+
+    var companyUser = await prisma.companyUser.findFirst({
+      where: { userId: user.id }
+    });
+
+    var company = companyUser 
+      ? await prisma.company.findUnique({ where: { id: companyUser.companyId } })
+      : null;
+
+    res.json({
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      company: company ? { id: company.id, name: company.name } : null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/companies", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({
+      where: { userId: userId },
+      include: { company: true }
+    });
+    if (!companyUser) {
+      throw createHttpError(404, "Company not found");
+    }
+    res.json(companyUser.company);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/companies/:id", requireAuth, requireRole("admin"), async (req, res, next) => {
+  try {
+    var updates = {};
+    if (req.body?.name) updates.name = req.body.name;
+    if (req.body?.settings) updates.settings = req.body.settings;
+    if (req.body?.status) updates.status = req.body.status;
+
+    var company = await prisma.company.update({
+      where: { id: req.params.id },
+      data: updates
+    });
+    res.json(company);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/companies/:id/users", requireAuth, async (req, res, next) => {
+  try {
+    var users = await prisma.companyUser.findMany({
+      where: { companyId: req.params.id },
+      include: { user: true }
+    });
+    res.json({ users: users.map(u => ({
+      id: u.user.id,
+      email: u.user.email,
+      name: u.user.name,
+      role: u.role,
+      status: u.status
+    })) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/companies/:id/users/invite", requireAuth, requireRole("admin", "manager"), async (req, res, next) => {
+  try {
+    var email = String(req.body?.email || "").trim().toLowerCase();
+    var name = String(req.body?.name || "").trim();
+    var role = String(req.body?.role || "member");
+
+    var existingUser = await prisma.user.findUnique({ where: { email: email } });
+    var userId;
+
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      var tempPassword = crypto.randomUUID().slice(0, 8);
+      var newUser = await prisma.user.create({
+        data: {
+          email: email,
+          name: name || email.split("@")[0],
+          passwordHash: hashPassword(tempPassword),
+          role: role
+        }
+      });
+      userId = newUser.id;
+    }
+
+    await prisma.companyUser.create({
+      data: {
+        companyId: req.params.id,
+        userId: userId,
+        role: role,
+        status: "pending"
+      }
+    });
+
+    res.status(201).json({ status: "invited", email: email });
+  } catch (error) {
+    next(error);
+  }
+});
+
+let QB_CLIENT_ID = process.env.QB_CLIENT_ID;
+let QB_CLIENT_SECRET = process.env.QB_CLIENT_SECRET;
+let QB_REDIRECT_URI = process.env.QB_REDIRECT_URI || "http://localhost:5000/api/quickbooks/callback";
+
+app.get("/api/quickbooks/auth", requireAuth, async (req, res, next) => {
+  if (!QB_CLIENT_ID) {
+    return res.status(503).json({ error: "QuickBooks not configured" });
+  }
+  var state = crypto.randomUUID();
+  var authUrl = QuickBooks.getAuthUrl(QB_CLIENT_ID, QB_REDIRECT_URI, state);
+  res.json({ authUrl: authUrl, state: state });
+});
+
+app.get("/api/quickbooks/callback", async (req, res, next) => {
+  try {
+    var code = req.query.code;
+    var realmId = req.query.realmId;
+    var state = req.query.state;
+
+    if (!code || !realmId) {
+      return res.status(400).json({ error: "Missing code or realmId" });
+    }
+
+    var tokens = await QuickBooks.exchangeCode(QB_CLIENT_ID, QB_CLIENT_SECRET, code, QB_REDIRECT_URI);
+    var expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+
+    if (companyUser) {
+      await prisma.quickBooksConnection.create({
+        data: {
+          companyId: companyUser.companyId,
+          realmId: realmId,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiresAt: expiresAt
+        }
+      });
+    }
+
+    res.json({ status: "connected", realmId: realmId });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/quickbooks/status", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    
+    if (!companyUser) {
+      return res.json({ connected: false });
+    }
+
+    var qb = await prisma.quickBooksConnection.findFirst({
+      where: { companyId: companyUser.companyId }
+    });
+
+    res.json({
+      connected: !!qb,
+      status: qb?.status,
+      expiresAt: qb?.expiresAt
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/quickbooks/sync", requireAuth, async (req, res, next) => {
+  if (!QuickBooks) {
+    return res.status(503).json({ error: "QuickBooks not configured" });
+  }
+
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var qb = await prisma.quickBooksConnection.findFirst({
+      where: { companyId: companyUser.companyId }
+    });
+
+    if (!qb) {
+      return res.status(400).json({ error: "QuickBooks not connected" });
+    }
+
+    if (new Date(qb.expiresAt) < new Date()) {
+      var tokens = await QuickBooks.refreshAccessToken(QB_CLIENT_ID, QB_CLIENT_SECRET, qb.refreshToken);
+      await prisma.quickBooksConnection.update({
+        where: { id: qb.id },
+        data: {
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiresAt: new Date(Date.now() + tokens.expires_in * 1000)
+        }
+      });
+    }
+
+    var invoices = await QuickBooks.fetchInvoices(qb.accessToken, qb.realmId);
+    var bills = await QuickBooks.fetchBills(qb.accessToken, qb.realmId);
+
+    var invoiceCount = invoices.QueryResponse?.Invoice?.length || 0;
+    var billCount = bills.QueryResponse?.Bill?.length || 0;
+
+    await prisma.activityLog.create({
+      data: {
+        event: "QUICKBOOKS_SYNC",
+        message: `Synced ${invoiceCount} invoices, ${billCount} bills from QB`,
+        timestamp: new Date()
+      }
+    });
+
+    res.json({
+      status: "synced",
+      invoices: invoiceCount,
+      bills: billCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/procurement/vendors", requireAuth, async (req, res, next) => {
+  if (!Procurement) {
+    return res.status(503).json({ error: "Procurement not configured" });
+  }
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var result = await Procurement.getProcurementSummary(companyUser.companyId);
+    res.json({ vendors: result.vendors });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/procurement/vendors", requireAuth, async (req, res, next) => {
+  if (!Procurement) {
+    return res.status(503).json({ error: "Procurement not configured" });
+  }
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var vendor = await Procurement.createVendor(
+      companyUser.companyId,
+      req.body.name,
+      req.body.email,
+      req.body.phone,
+      req.body.address,
+      req.body.taxId
+    );
+    res.status(201).json(vendor);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/procurement/purchase-orders", requireAuth, async (req, res, next) => {
+  if (!Procurement) {
+    return res.status(503).json({ error: "Procurement not configured" });
+  }
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var result = await Procurement.getProcurementSummary(companyUser.companyId);
+    res.json({ purchaseOrders: result.purchaseOrders, summary: result.summary });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/procurement/purchase-orders", requireAuth, async (req, res, next) => {
+  if (!Procurement) {
+    return res.status(503).json({ error: "Procurement not configured" });
+  }
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var po = await Procurement.createPurchaseOrder(
+      companyUser.companyId,
+      req.body.vendorId,
+      req.body.amount,
+      req.body.dueDate
+    );
+    res.status(201).json(po);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/procurement/purchase-orders/:id/approve", requireAuth, requireRole("admin", "manager"), async (req, res, next) => {
+  if (!Procurement) {
+    return res.status(503).json({ error: "Procurement not configured" });
+  }
+  try {
+    var po = await Procurement.approvePurchaseOrder(req.params.id);
+    res.json(po);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/procurement/receipts", requireAuth, async (req, res, next) => {
+  if (!Procurement) {
+    return res.status(503).json({ error: "Procurement not configured" });
+  }
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var receipt = await Procurement.createReceipt(
+      companyUser.companyId,
+      req.body.purchaseOrderId,
+      req.body.amount
+    );
+    res.status(201).json(receipt);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`SnapKitty Trailblazer Stack active on port ${PORT}`);
+  console.log(`
+╔═══════════════════════════════════════════════════════════════╗
+║         DEVFlow Sovereign OS - Bifrost Bridge Ready          ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Oracle Endpoints:                                          ║
+║  • POST /api/finance/bifrost/sync    Multi-Entity Ledger    ║
+║  • GET  /api/oracle/proof-of-reserve  Asset Verification     ║
+║  • GET  /api/oracle/risk-pulse      Liquidity Risk Model   ║
+║  • GET  /api/oracle/collateral-power Vault Power Oracle     ║
+║  • GET  /api/oracle/heartbeat       System Health          ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Ledger + Tax:                                              ║
+║  • GET  /api/ledger/summary        Canonical Ledger         ║
+║  • GET  /api/ledger/events        Event Stream              ║
+║  • GET  /api/tax/summary          Tax + Compliance         ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Procurement:                                             ║
+║  • GET/POST /api/procurement/vendors    Vendor Mgmt     ║
+║  • GET/POST /api/procurement/purchase-orders  PO Flow    ║
+║  • POST /api/procurement/receipts    Receipt → Ledger    ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Integrations:                                            ║
+║  • GET  /api/quickbooks/auth     OAuth2 Connect        ║
+║  • GET  /api/quickbooks/sync    Sync Transactions    ║
+╚═══════════════════════════════════════════════════════════════╝
+  `);
+});
+
+app.get("/api/ledger/summary", async (req, res, next) => {
+  try {
+    const entities = await prisma.entity.findMany();
+    const liquidCents = entities.reduce((sum, e) => sum + e.balance, 0n);
+    const vaultCents = entities.reduce((sum, e) => sum + e.vault, 0n);
+    
+    res.json({
+      canonicalLedger: {
+        totalBalanceCents: liquidCents.toString(),
+        totalVaultCents: vaultCents.toString(),
+        lastSynced: new Date().toISOString()
+      },
+      segments: entities.map(e => ({
+        id: e.id,
+        name: e.name,
+        type: e.type,
+        balanceCents: e.balance.toString(),
+        currency: e.currency
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/ledger/events", async (req, res, next) => {
+  try {
+    const events = await prisma.activityLog.findMany({
+      orderBy: { timestamp: "desc" },
+      take: 50
+    });
+    
+    res.json({
+      schemaVersion: "1.0.0",
+      events: events.map(e => ({
+        id: e.id,
+        schemaVersion: "1.0.0",
+        eventType: e.event,
+        immutable: true,
+        timestamp: e.timestamp.toISOString(),
+        text: e.message,
+        time: e.timestamp.toISOString()
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/tax/summary", async (req, res, next) => {
+  try {
+    const entities = await prisma.entity.findMany();
+    const liquidCents = entities.reduce((sum, e) => sum + e.balance, 0n);
+    
+    const deductibleEstimate = Math.round(Number(liquidCents) * 0.7);
+    const liabilityEstimate = Math.round(Number(liquidCents) * 0.25);
+    
+    const activity = await prisma.activityLog.findMany({
+      orderBy: { timestamp: "desc" },
+      take: 20
+    });
+    const flaggedCount = activity.filter(a => 
+      a.event?.includes("MISMATCH") || a.event?.includes("ERROR")
+    ).length;
+    
+    const auditReadiness = flaggedCount === 0 ? "100%" : 
+      flaggedCount === 1 ? "85%" : "70%";
+    
+    res.json({
+      deductibleCents: deductibleEstimate,
+      liabilityCents: liabilityEstimate,
+      auditReadinessScore: auditReadiness,
+      flaggedTransactions: flaggedCount,
+      schemaVersion: "1.0.0"
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/revenue/invoices", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var invoices = await prisma.invoice.findMany({
+      where: { companyId: companyUser.companyId },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json({ invoices: invoices });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/revenue/invoices", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var invoiceNumber = "INV-" + Date.now().toString().slice(-6);
+    var invoice = await prisma.invoice.create({
+      data: {
+        companyId: companyUser.companyId,
+        invoiceNumber: invoiceNumber,
+        customerName: req.body.customerName || "Unknown",
+        customerId: req.body.customerId,
+        amount: BigInt(Math.round((req.body.amount || 0) * 100)),
+        taxAmount: BigInt(Math.round((req.body.taxAmount || 0) * 100)),
+        status: "draft",
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null
+      }
+    });
+    await EventBus.emit("INVOICE_CREATED", `Invoice ${invoiceNumber} created for $${req.body.amount}`, { invoiceId: invoice.id });
+    res.status(201).json(invoice);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/revenue/invoices/:id/issue", requireAuth, async (req, res, next) => {
+  try {
+    var invoice = await prisma.invoice.update({
+      where: { id: req.params.id },
+      data: { status: "issued" }
+    });
+    await EventBus.emit("INVOICE_ISSUED", `Invoice ${invoice.invoiceNumber} issued`, { invoiceId: invoice.id });
+    res.json(invoice);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/revenue/invoices/:id/paid", requireAuth, async (req, res, next) => {
+  try {
+    var invoice = await prisma.invoice.update({
+      where: { id: req.params.id },
+      data: { 
+        status: "paid",
+        paidAt: new Date()
+      }
+    });
+    await EventBus.emit("INVOICE_PAID", `Invoice ${invoice.invoiceNumber} paid`, { invoiceId: invoice.id });
+    res.json(invoice);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/revenue/payments", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var payments = await prisma.payment.findMany({
+      where: { companyId: companyUser.companyId },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json({ payments: payments });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/revenue/payments", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var payment = await prisma.payment.create({
+      data: {
+        companyId: companyUser.companyId,
+        invoiceId: req.body.invoiceId,
+        amount: BigInt(Math.round((req.body.amount || 0) * 100)),
+        method: req.body.method || "card",
+        reference: req.body.reference,
+        status: "completed",
+        receivedAt: new Date()
+      }
+    });
+    await EventBus.emit("PAYMENT_RECEIVED", `Payment of $${req.body.amount} received`, { paymentId: payment.id, invoiceId: req.body.invoiceId });
+    res.status(201).json(payment);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/revenue/contracts", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var contracts = await prisma.contract.findMany({
+      where: { companyId: companyUser.companyId },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json({ contracts: contracts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/revenue/contracts", requireAuth, async (req, res, next) => {
+  try {
+    var userId = req.headers["x-user-id"];
+    var companyUser = await prisma.companyUser.findFirst({ where: { userId: userId } });
+    var contract = await prisma.contract.create({
+      data: {
+        companyId: companyUser.companyId,
+        customerName: req.body.customerName || "Unknown",
+        customerId: req.body.customerId,
+        value: BigInt(Math.round((req.body.value || 0) * 100)),
+        status: "active",
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+        terms: req.body.terms
+      }
+    });
+    await EventBus.emit("CONTRACT_CREATED", `Contract created with ${req.body.customerName} for $${req.body.value}`, { contractId: contract.id });
+    res.status(201).json(contract);
+  } catch (error) {
+    next(error);
+  }
 });
