@@ -1234,12 +1234,57 @@ app.get("/integrations/status", async (req, res, next) => {
   try {
     var integrations = await prisma.integration.findMany();
     
-    res.json({ integrations: integrations.map(function(i) {
-      return { provider: i.provider, status: i.status };
-    }) });
+    res.json({ 
+      integrations: integrations.map(function(i) {
+        return { provider: i.provider, status: i.status };
+      }),
+      kafka: {
+        configured: process.env.KAFKA_BROKERS ? true : false,
+        brokers: process.env.KAFKA_BROKERS || "not configured"
+      }
+    });
   } catch (error) {
     next(error);
   }
+});
+
+var RevenueRecognitionEngine;
+try {
+  RevenueRecognitionEngine = require("./services/revenueRecognition");
+} catch (e) {
+  console.log("[ASC606] Engine not available");
+}
+
+app.post("/api/revenue/recognize", async (req, res, next) => {
+  if (!RevenueRecognitionEngine) {
+    return res.status(503).json({ error: "ASC 606 engine not configured" });
+  }
+  
+  try {
+    var customerId = String(req.body?.customerId || "").trim();
+    var contractData = req.body;
+    
+    if (!customerId) {
+      throw createHttpError(400, "customerId is required");
+    }
+    
+    var result = await RevenueRecognitionEngine.processContract(prisma, customerId, contractData);
+    res.json({
+      status: "completed",
+      result: result,
+      rules: RevenueRecognitionEngine.getRulesSummary()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/revenue/rules", async (req, res, next) => {
+  if (!RevenueRecognitionEngine) {
+    return res.status(503).json({ error: "ASC 606 engine not configured" });
+  }
+  
+  res.json(RevenueRecognitionEngine.getRulesSummary());
 });
 
 const PORT = Number.parseInt(process.env.PORT, 10) || 5000;
