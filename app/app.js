@@ -55,7 +55,13 @@ function createDualLedgerState() {
       }
     ],
     activeEntityId: "digital-inclusion-fund",
-    sovereignCreditScore: 650
+    sovereignCreditScore: 650,
+    finance: {
+      nonProfitBalanceCents: 0,
+      bCorpBalanceCents: 0,
+      trustVaultCents: 0,
+      lastBridgeSync: "Never"
+    }
   };
 }
 
@@ -76,11 +82,17 @@ const elements = {
   scsGauge: document.querySelector("#scs-gauge"),
   scsBadge: document.querySelector("#scs-badge"),
   totalLiquidity: document.querySelector("#total-liquidity"),
+  totalLiquidityDisplay: document.querySelector("#total-liquidity-display"),
   pipelineExposure: document.querySelector("#pipeline-exposure"),
   netPosition: document.querySelector("#net-position"),
   vaultAnchor: document.querySelector("#vault-anchor"),
   scsIntel: document.querySelector("#scs-intel"),
+  scsScore: document.querySelector("#scs-score"),
+  scsRiskBadge: document.querySelector("#scs-risk-badge"),
   statusBadge: document.querySelector("#status-badge"),
+  tradeVolume: document.querySelector("#trade-volume"),
+  visaLimit: document.querySelector("#visa-limit"),
+  issueCardBtn: document.querySelector("#issue-card-btn"),
   contactsList: document.querySelector("#contacts-list"),
   dealsBoard: document.querySelector("#deals-board"),
   tasksList: document.querySelector("#tasks-list"),
@@ -106,6 +118,24 @@ elements.seedButton.addEventListener("click", () => {
   persistState();
   render();
 });
+
+elements.issueCardBtn && elements.issueCardBtn.addEventListener("click", function() {
+  var amount = prompt("Enter virtual card amount in USD:");
+  if (amount && !isNaN(amount) && Number(amount) > 0) {
+    issueVirtualCard(Number(amount));
+  }
+});
+
+function issueVirtualCard(amountDollars) {
+  var cardNumber = "4" + Math.floor(Math.random() * 1e15).toString().padStart(15, "0");
+  var masked = "**** **** **** " + cardNumber.slice(-4);
+  var expiry = (new Date().getFullYear()) + "-" + String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
+  
+  console.log("[BaaS] Virtual Card Issued:", masked, "| Amount:", amountDollars);
+  pushActivity("Issued virtual card " + masked + " for $" + amountDollars);
+  alert("Virtual Card Issued!\nNumber: " + masked + "\nExpires: " + expiry + "\nAmount: $" + amountDollars);
+  render();
+}
 
 render();
 
@@ -550,9 +580,23 @@ async function syncOpenCollective() {
     var data = await response.json();
     
     var newEntities = [];
+    var nonProfitBalance = 0;
+    var bCorpBalance = 0;
+    var trustVault = 0;
+    
     if (data.entities && data.entities.length > 0) {
       for (var i = 0; i < data.entities.length; i++) {
         var e = data.entities[i];
+        var balanceCents = Math.round((e.balance || 0) * 100);
+        var vaultCents = Math.round((e.vault || 0) * 100);
+        
+        if (e.type === "nonprofit") {
+          nonProfitBalance = balanceCents;
+        } else if (e.type === "bcorp") {
+          bCorpBalance = balanceCents;
+        }
+        trustVault += vaultCents;
+        
         newEntities.push({
           id: e.id,
           name: e.name,
@@ -570,9 +614,16 @@ async function syncOpenCollective() {
     
     state.funds.entities = newEntities;
     state.funds.sovereignCreditScore = newSCS;
+    state.funds.finance = {
+      nonProfitBalanceCents: nonProfitBalance,
+      bCorpBalanceCents: bCorpBalance,
+      trustVaultCents: trustVault,
+      lastBridgeSync: timestampLabel()
+    };
     
     var totalLiquid = data.totalLiquid || 0;
     var totalVault = data.totalVault || 0;
+    pushActivity("Bifrost Bridge: Multi-Entity Ledgers Verified.");
     pushActivity("Bifrost Sync: Liquid $" + totalLiquid + " | Vault $" + totalVault + " | SCS " + newSCS);
     persistState();
     render();
