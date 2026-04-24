@@ -67,9 +67,18 @@
 
           <hr>
 
-          <h4>Inflow Balance</h4>
-          <div id="collective-balance" class="stat-value">$0</div>
-          <button id="sync-button" type="button" class="btn-sync">🔄 Sync Open Collective</button>
+          <h4>Fund Selector</h4>
+          <select id="entity-selector" class="entity-selector">
+            <option value="digital-inclusion-fund">Digital Inclusion Fund</option>
+            <option value="operating-revenue">Operating Revenue</option>
+          </select>
+          <span id="entity-type" class="entity-type">🏛️ Non-Profit</span>
+
+          <hr>
+
+          <h4>Fund Balance</h4>
+          <div id="fund-balance" class="stat-value">$0</div>
+          <button id="sync-button" type="button" class="btn-sync">🔄 Sync Fund</button>
         </section>
       </section>
 

@@ -289,6 +289,31 @@ button {
   cursor: progress;
 }
 
+.entity-selector {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.entity-selector:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.entity-type {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .card-top,
 .deal-meta,
 .task-meta {

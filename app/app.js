@@ -27,8 +27,34 @@ const createSeedState = () => ({
   activity: [
     { id: crypto.randomUUID(), text: "System initialized", time: timestampLabel() }
   ],
-  collectiveStats: createCollectiveStatsState()
+  funds: createDualLedgerState()
 });
+
+function createDualLedgerState() {
+  return {
+    entities: [
+      {
+        id: "digital-inclusion-fund",
+        name: "Digital Inclusion Fund",
+        type: "nonprofit",
+        slug: "snapkitty",
+        balance: 0,
+        currency: "USD",
+        lastSync: "Never"
+      },
+      {
+        id: "operating-revenue",
+        name: "Operating Revenue",
+        type: "bcorp",
+        slug: "snapkitty",
+        balance: 0,
+        currency: "USD",
+        lastSync: "Never"
+      }
+    ],
+    activeEntityId: "digital-inclusion-fund"
+  };
+}
 
 let state = loadState();
 
@@ -38,7 +64,9 @@ const elements = {
   pipelineValue: document.querySelector("#pipeline-value"),
   dueTasksCount: document.querySelector("#due-tasks-count"),
   sovereigntyRatio: document.querySelector("#sovereignty-ratio"),
-  collectiveBalance: document.querySelector("#collective-balance"),
+  fundBalance: document.querySelector("#fund-balance"),
+  entitySelector: document.querySelector("#entity-selector"),
+  entityType: document.querySelector("#entity-type"),
   contactsList: document.querySelector("#contacts-list"),
   dealsBoard: document.querySelector("#deals-board"),
   tasksList: document.querySelector("#tasks-list"),
@@ -56,6 +84,9 @@ elements.contactForm.addEventListener("submit", handleContactSubmit);
 elements.dealForm.addEventListener("submit", handleDealSubmit);
 elements.taskForm.addEventListener("submit", handleTaskSubmit);
 elements.syncButton.addEventListener("click", syncOpenCollective);
+elements.entitySelector.addEventListener("change", (e) => {
+  switchActiveEntity(e.currentTarget.value);
+});
 elements.seedButton.addEventListener("click", () => {
   state = createSeedState();
   persistState();
@@ -82,25 +113,61 @@ function loadState() {
 }
 
 function normalizeState(savedState) {
-  const legacyBalance = Number(savedState?.finance?.collectiveBalanceCents || 0) / 100;
-  const legacyLastSync = savedState?.finance?.lastSyncedAt
-    ? formatSyncLabel(savedState.finance.lastSyncedAt)
-    : "Never";
+  var legacyBalance = 0;
+  var legacyCurrency = "USD";
+  var legacyLastSync = "Never";
+  
+  if (savedState) {
+    if (savedState.collectiveStats && savedState.collectiveStats.balance) {
+      legacyBalance = Number(savedState.collectiveStats.balance) / 100;
+      legacyCurrency = String(savedState.collectiveStats.currency || "USD");
+      legacyLastSync = String(savedState.collectiveStats.lastSync || "Never");
+    } else if (savedState.finance && savedState.finance.collectiveBalanceCents) {
+      legacyBalance = Number(savedState.finance.collectiveBalanceCents) / 100;
+      legacyCurrency = String(savedState.finance.collectiveCurrency || "USD");
+      if (savedState.finance.lastSyncedAt) {
+        legacyLastSync = formatSyncLabel(savedState.finance.lastSyncedAt);
+      }
+    }
+  }
+
+  var hasEntities = false;
+  if (savedState && savedState.funds && savedState.funds.entities && savedState.funds.entities.length > 0) {
+    hasEntities = true;
+  }
 
   return {
-    contacts: Array.isArray(savedState?.contacts) ? savedState.contacts : [],
-    deals: Array.isArray(savedState?.deals) ? savedState.deals : [],
-    tasks: Array.isArray(savedState?.tasks) ? savedState.tasks : [],
-    activity: Array.isArray(savedState?.activity) ? savedState.activity : [],
-    collectiveStats: {
-      ...createCollectiveStatsState(),
-      ...(savedState?.collectiveStats && typeof savedState.collectiveStats === "object"
-        ? savedState.collectiveStats
-        : {}),
-      balance: Number(savedState?.collectiveStats?.balance ?? legacyBalance ?? 0),
-      currency: String(savedState?.collectiveStats?.currency || savedState?.finance?.collectiveCurrency || "USD"),
-      lastSync: String(savedState?.collectiveStats?.lastSync || legacyLastSync)
-    }
+    contacts: Array.isArray(savedState && savedState.contacts) ? savedState.contacts : [],
+    deals: Array.isArray(savedState && savedState.deals) ? savedState.deals : [],
+    tasks: Array.isArray(savedState && savedState.tasks) ? savedState.tasks : [],
+    activity: Array.isArray(savedState && savedState.activity) ? savedState.activity : [],
+    funds: hasEntities ? savedState.funds : createDualLedgerState(legacyBalance, legacyCurrency, legacyLastSync)
+  };
+}
+
+function createDualLedgerState(legacyBalance, legacyCurrency, legacyLastSync) {
+  return {
+    entities: [
+      {
+        id: "digital-inclusion-fund",
+        name: "Digital Inclusion Fund",
+        type: "nonprofit",
+        slug: "snapkitty",
+        balance: legacyBalance,
+        currency: legacyCurrency,
+        lastSync: legacyLastSync
+      },
+      {
+        id: "operating-revenue",
+        name: "Operating Revenue",
+        type: "bcorp",
+        slug: "snapkitty",
+        balance: 0,
+        currency: "USD",
+        lastSync: "Never"
+      }
+    ],
+    activeEntityId: "digital-inclusion-fund"
   };
 }
 
@@ -205,22 +272,22 @@ function renderStats() {
 
 function renderFinanceCard() {
   const pipelineValue = getOpenPipelineValueDollars();
-  const collectiveBalance = getCollectiveBalance();
-  const ratio = pipelineValue > 0 ? collectiveBalance / pipelineValue : 1;
+  const activeEntity = getActiveEntity();
+  const entityBalance = activeEntity ? activeEntity.balance : 0;
+  const ratio = pipelineValue > 0 ? entityBalance / pipelineValue : 1;
 
   elements.sovereigntyRatio.textContent = ratio.toFixed(2);
-  elements.collectiveBalance.textContent = formatCurrency(
-    collectiveBalance,
-    state.collectiveStats.currency,
-    2
-  );
+  elements.fundBalance.textContent = formatCurrency(entityBalance, activeEntity?.currency || "USD", 2);
+  elements.entitySelector.value = state.funds.activeEntityId;
+  elements.entityType.textContent = activeEntity?.type === "nonprofit" ? "🏛️ Non-Profit" : "💼 B-Corp";
+
   elements.syncButton.disabled = runtimeState.collectiveSyncPending;
   elements.syncButton.textContent = runtimeState.collectiveSyncPending
-    ? "Syncing Open Collective..."
-    : "🔄 Sync Open Collective";
+    ? "Syncing..."
+    : `🔄 Sync ${activeEntity?.name || "Fund"}`;
 
-  if (state.collectiveStats.lastSync && state.collectiveStats.lastSync !== "Never") {
-    elements.syncButton.title = `Last synced ${state.collectiveStats.lastSync}`;
+  if (activeEntity?.lastSync && activeEntity.lastSync !== "Never") {
+    elements.syncButton.title = `Last synced ${activeEntity.lastSync}`;
   } else {
     elements.syncButton.removeAttribute("title");
   }
@@ -338,29 +405,33 @@ function renderActivity() {
 }
 
 async function syncOpenCollective() {
+  const activeEntity = getActiveEntity();
   runtimeState.collectiveSyncPending = true;
-  pushActivity("📡 Initiating Open Collective financial sync...");
+  pushActivity(`📡 Syncing ${activeEntity?.name}...`);
   renderFinanceCard();
   renderActivity();
 
   try {
-    const collectiveSnapshot = await fetchCollectiveBalance();
+    const collectiveSnapshot = await fetchCollectiveBalance(activeEntity?.slug);
 
     state = {
       ...state,
-      collectiveStats: {
-        balance: collectiveSnapshot.balance,
-        currency: collectiveSnapshot.currency,
-        lastSync: timestampLabel()
+      funds: {
+        ...state.funds,
+        entities: state.funds.entities.map((entity) =>
+          entity.id === state.funds.activeEntityId
+            ? { ...entity, balance: collectiveSnapshot.balance, currency: collectiveSnapshot.currency, lastSync: timestampLabel() }
+            : entity
+        )
       }
     };
     pushActivity(
-      `✅ Sync Success: Liquid balance is ${formatCurrency(state.collectiveStats.balance, state.collectiveStats.currency, 2)}`
+      `✅ ${activeEntity?.name}: ${formatCurrency(state.funds.entities.find(e => e.id === state.funds.activeEntityId).balance, activeEntity?.currency, 2)}`
     );
     persistState();
     render();
   } catch (error) {
-    pushActivity(`❌ Sync Error: ${error.message || "Connection to Open Collective failed"}`);
+    pushActivity(`❌ Sync Error: ${error.message || "Connection failed"}`);
     persistState();
     render();
   } finally {
@@ -369,11 +440,23 @@ async function syncOpenCollective() {
   }
 }
 
-async function fetchCollectiveBalance() {
+function getActiveEntity() {
+  return state.funds?.entities?.find((e) => e.id === state.funds.activeEntityId);
+}
+
+function getOpenDeals() {
+  return state.deals.filter((deal) => deal.stage !== "Won");
+}
+
+function getOpenPipelineValueDollars() {
+  return getOpenDeals().reduce((total, deal) => total + deal.value, 0);
+}
+
+async function fetchCollectiveBalance(slug) {
   try {
     return await fetchCollectiveBalanceFromBackend();
   } catch {
-    return fetchCollectiveBalanceDirect();
+    return fetchCollectiveBalanceDirect(slug);
   }
 }
 
@@ -396,7 +479,8 @@ async function fetchCollectiveBalanceFromBackend() {
   };
 }
 
-async function fetchCollectiveBalanceDirect() {
+async function fetchCollectiveBalanceDirect(slug) {
+  const collectiveSlug = slug || "snapkitty";
   const query = `
     query getCollective($slug: String!) {
       account(slug: $slug) {
@@ -417,7 +501,7 @@ async function fetchCollectiveBalanceDirect() {
     },
     body: JSON.stringify({
       query,
-      variables: { slug: OPEN_COLLECTIVE_SLUG }
+      variables: { slug: collectiveSlug }
     })
   });
   const result = await response.json().catch(() => ({}));
@@ -436,42 +520,39 @@ async function fetchCollectiveBalanceDirect() {
 }
 
 function generateQuickBooksPayload(dealId) {
-  const deal = state.deals.find(d => d.id === dealId);
+  var deal = null;
+  for (var i = 0; i < state.deals.length; i++) {
+    if (state.deals[i].id === dealId) {
+      deal = state.deals[i];
+      break;
+    }
+  }
   if (!deal) return;
 
-  const invoicePayload = {
-    Line: [{
-        DetailType: "SalesItemLineDetail",
-        Amount: deal.value,
-        SalesItemLineDetail: {
-          ItemRef: { name: "Consulting Services", value: "1" },
-          Qty: 1,
-          UnitPrice: deal.value
+  var invoicePayload = {
+    "Line": [
+      {
+        "DetailType": "SalesItemLineDetail",
+        "Amount": deal.value,
+        "SalesItemLineDetail": {
+          "ItemRef": { "name": "Consulting Services", "value": "1" },
+          "Qty": 1,
+          "UnitPrice": deal.value
         }
       }
-    }],
-    CustomerRef: { name: deal.title.split(" ")[0] }, // Fallback to title prefix
-    DueDate: offsetDate(30) // Default Net 30
+    ],
+    "CustomerRef": { "name": deal.title.split(" ")[0] },
+    "DueDate": offsetDate(30)
   };
 
   console.log("QuickBooks Payload Generated:", invoicePayload);
-  pushActivity(`🧾 Generated QB Invoice Payload for ${deal.title}`);
-  alert(`Invoice structure for "${deal.title}" generated. Check console for payload.`);
+  pushActivity("Generated QB Invoice Payload for " + deal.title);
+  alert("Invoice structure for \"" + deal.title + "\" generated. Check console for payload.");
   render();
 }
 
-function getOpenDeals() {
-  return state.deals.filter((deal) => deal.stage !== "Won");
-}
-
-function getOpenPipelineValueDollars() {
-  return getOpenDeals().reduce((total, deal) => total + deal.value, 0);
-}
-
 function getCollectiveBalance() {
-  return Number.isFinite(state.collectiveStats.balance)
-    ? state.collectiveStats.balance
-    : 0;
+  return getActiveEntity() ? getActiveEntity().balance : 0;
 }
 
 function createCollectiveStatsState() {
@@ -480,6 +561,12 @@ function createCollectiveStatsState() {
     currency: "USD",
     lastSync: "Never"
   };
+}
+
+function switchActiveEntity(entityId) {
+  state.funds.activeEntityId = entityId;
+  persistState();
+  render();
 }
 
 function formatCurrency(value, currency = "USD", fractionDigits = 0) {
