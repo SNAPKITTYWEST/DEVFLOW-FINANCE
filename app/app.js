@@ -292,7 +292,8 @@ function renderFinanceCard() {
     }
   }
   
-  var ratio = pipelineValue > 0 ? entityBalance / pipelineValue : (pipelineValue === 0 ? 1 : 0);
+  var ratio = pipelineValue > 0 ? totalLiquid / pipelineValue : (pipelineValue === 0 && totalLiquid > 0 ? 1 : (totalLiquid > 0 ? 1 : 0));
+  var sovereigntyStatus = ratio > 1.0 ? "SOVEREIGN" : (ratio >= 0.5 ? "STABLE" : "EXPANDING");
   
   var scs = state.funds && state.funds.sovereignCreditScore ? state.funds.sovereignCreditScore : 650;
   var scsLabel = " Expansionary ";
@@ -305,7 +306,7 @@ function renderFinanceCard() {
     scsClass = "high";
   }
 
-  elements.sovereigntyRatio.textContent = ratio.toFixed(2);
+  elements.sovereigntyRatio.textContent = ratio.toFixed(2) + " (" + sovereigntyStatus + ")";
   elements.fundBalance.textContent = formatCurrency(entityBalance, activeEntity ? activeEntity.currency : "USD", 2);
   elements.difBalance.textContent = formatCurrency(totalLiquid, "USD", 2);
   elements.opBalance.textContent = formatCurrency(totalVault, "USD", 2);
