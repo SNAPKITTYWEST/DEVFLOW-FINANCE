@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DevFlow CRM</title>
+  <title>SnapKitty OS | Financial Control Tower</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -13,234 +13,219 @@
       <span class="heartbeat-label">System Online</span>
     </div>
     
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="./logo.svg" alt="SnapKitty Collective" style="width: 120px; height: 120px; margin-bottom: 0.5rem; display: block;">
-        <p class="eyebrow">SnapKitty Collective</p>
-        <h1>CRM Workspace</h1>
+    <nav class="nav-rail">
+      <div class="nav-logo">
+        <img src="./logo.svg" alt="SnapKitty" style="width: 40px; height: 40px;">
       </div>
-      <nav class="nav">
-        <a href="#overview">Overview</a>
-        <a href="#contacts">Contacts</a>
-        <a href="#deals">Deals</a>
-        <a href="#tasks">Tasks</a>
+      <nav class="nav-items">
+        <a href="#today" class="nav-item active" data-view="today">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Today</span>
+        </a>
+        <a href="#revenue" class="nav-item" data-view="revenue">
+          <span class="nav-icon">💰</span>
+          <span class="nav-label">Revenue</span>
+        </a>
+        <a href="#accounts" class="nav-item" data-view="accounts">
+          <span class="nav-icon">🏢</span>
+          <span class="nav-label">Accounts</span>
+        </a>
+        <a href="#exceptions" class="nav-item" data-view="exceptions">
+          <span class="nav-icon">⚠️</span>
+          <span class="nav-label">Exceptions</span>
+        </a>
+        <a href="#insights" class="nav-item" data-view="insights">
+          <span class="nav-icon">🤖</span>
+          <span class="nav-label">Insights</span>
+        </a>
       </nav>
-      <section class="sidebar-card">
-        <p class="sidebar-label">Pipeline Health</p>
-        <strong id="sidebar-health">Stable</strong>
-        <span id="sidebar-health-detail">2 deals closing this week</span>
-      </section>
-    </aside>
+    </nav>
 
-    <main class="content">
-      <header class="hero" id="overview">
-        <div>
-          <p class="eyebrow">Customer Operations</p>
-          <h2>Track relationships, revenue, and follow-ups in one place.</h2>
-        </div>
-        <button class="primary-button" id="seed-button" type="button">Reset Demo Data</button>
-      </header>
-
-      <section class="stats-grid" aria-label="Sovereign Intelligence Bar">
-        <article class="stat-card intel-card">
-          <span>Total Liquidity</span>
-          <strong id="total-liquidity">$0</strong>
-          <small>available balance</small>
-        </article>
-        <article class="stat-card intel-card">
-          <span>Pipeline Exposure</span>
-          <strong id="pipeline-exposure">$0</strong>
-          <small>open deals total</small>
-        </article>
-        <article class="stat-card intel-card">
-          <span>Net Position</span>
-          <strong id="net-position">$0</strong>
-          <small>liquidity - pipeline</small>
-        </article>
-        <article class="stat-card intel-card">
-          <span>Vault Anchor</span>
-          <strong id="vault-anchor">$0</strong>
-          <small>trust assets</small>
-        </article>
-        <article class="stat-card intel-card">
-          <span>SCS</span>
-          <strong id="scs-intel">650</strong>
-          <small>credit score</small>
-        </article>
-        <article class="stat-card intel-card">
-          <span>Status</span>
-          <strong id="status-badge">STABLE</strong>
-          <small>sovereignty</small>
-        </article>
-      </section>
-
-      <section class="intel-grid" aria-label="Lexus Nexus Intelligence">
-        <article class="card intel-card">
-          <h4>Sovereign Credit</h4>
-          <div id="scs-score" class="stat-value scs-large">650</div>
-          <span id="scs-risk-badge" class="badge medium">Expansionary</span>
-        </article>
-        <article class="card intel-card">
-          <h4>Infinite Banking</h4>
-          <div id="total-liquidity-display" class="stat-value">$0</div>
-          <p class="meta">Total Liquid</p>
-          <div id="sovereignty-ratio" class="stat-value">0.00</div>
-          <p class="meta">Sovereignty Ratio</p>
-          <div id="visa-limit" class="stat-value">$0</div>
-          <p class="meta">Visa Commercial Limit (90%)</p>
-        </article>
-        <article class="card intel-card">
-          <h4>GPO Procurement</h4>
-          <div id="trade-volume" class="stat-value">$0</div>
-          <p class="meta">Trade Volume (Won Deals)</p>
-          <button id="issue-card-btn" type="button" class="btn-sync">💳 Issue Virtual Card</button>
-        </article>
-      </section>
-
-      <section class="stats-grid" aria-label="CRM summary">
-        <article class="stat-card">
-          <span>Contacts</span>
-          <strong id="contacts-count">0</strong>
-          <small>active records</small>
-        </article>
-        <article class="stat-card">
-          <span>Open Deals</span>
-          <strong id="open-deals-count">0</strong>
-          <small>pipeline opportunities</small>
-        </article>
-        <article class="stat-card">
-          <span>Pipeline Value</span>
-          <strong id="pipeline-value">$0</strong>
-          <small>weighted total</small>
-        </article>
-        <article class="stat-card">
-          <span>Due Tasks</span>
-          <strong id="due-tasks-count">0</strong>
-          <small>next 7 days</small>
-        </article>
-      </section>
-
-      <section class="finance-grid" aria-label="Financial controls">
-        <section class="card financial-card">
-          <h4>Sovereignty Metric</h4>
-          <div id="sovereignty-ratio" class="stat-value">0.00</div>
-          <p class="meta">Liquid-to-Pipeline Ratio</p>
-
-          <hr>
-
-          <h4>SCS Gauge</h4>
-          <div class="scs-display">
-            <span id="scs-gauge" class="scs-value">650</span>
-            <span id="scs-badge" class="badge medium">Expansionary</span>
+    <main class="workspace">
+      <section id="view-today" class="view active">
+        <header class="command-header">
+          <div>
+            <h1>Command Center</h1>
+            <p class="subtitle">What's happening today</p>
           </div>
-
-          <hr>
-
-          <h4>Lexus Nexus Intelligence</h4>
-          <div class="nexus-breakdown">
-            <div class="nexus-row">
-              <span class="nexus-label">DIF:</span>
-              <span id="dif-balance" class="nexus-value">$0</span>
+          <div class="command-stats">
+            <div class="mini-stat">
+              <strong id="today-revenue">$0</strong>
+              <span>Revenue Today</span>
             </div>
-            <div class="nexus-row">
-              <span class="nexus-label">Operating:</span>
-              <span id="op-balance" class="nexus-value">$0</span>
+            <div class="mini-stat warning">
+              <strong id="today-actions">0</strong>
+              <span>Needs Attention</span>
             </div>
-            <div class="nexus-row">
-              <span class="nexus-label">💎 Trust Vault:</span>
-              <span id="vault-balance" class="nexus-value">$0</span>
+            <div class="mini-stat">
+              <strong id="today-pending">0</strong>
+              <span>Pending</span>
             </div>
           </div>
+        </header>
 
-          <button id="sync-button" type="button" class="btn-sync">🔄 Sync Bifrost Bridge</button>
+        <section class="dashboard-grid">
+          <section class="card alert-card">
+            <h4>⚠️ Needs Attention</h4>
+            <div id="attention-list" class="activity-list">
+              <p class="empty">All clear! No issues.</p>
+            </div>
+          </section>
+          
+          <section class="card flow-card">
+            <h4>💰 Revenue Flow</h4>
+            <div id="revenue-flow-canvas" class="flow-canvas">
+              <div class="flow-node" data-stage="contract">
+                <div class="node-icon">📄</div>
+                <div class="node-label">Contracts</div>
+                <div class="node-count" id="contract-count">0</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node" data-stage="invoice">
+                <div class="node-icon">🧾</div>
+                <div class="node-label">Invoices</div>
+                <div class="node-count" id="invoice-count">0</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node" data-stage="payment">
+                <div class="node-icon">💳</div>
+                <div class="node-label">Payments</div>
+                <div class="node-count" id="payment-count">0</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node" data-stage="recognition">
+                <div class="node-icon">✅</div>
+                <div class="node-label">Recognized</div>
+                <div class="node-count" id="recognition-count">0</div>
+              </div>
+            </div>
+          </section>
+          
+          <section class="card event-card">
+            <h4>📡 Live Events</h4>
+            <div id="event-stream" class="event-stream">
+              <p class="empty">Waiting for events...</p>
+            </div>
+          </section>
         </section>
       </section>
 
-      <section class="grid two-column">
-        <article class="panel" id="contacts">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">People</p>
-              <h3>Contacts</h3>
-            </div>
+      <section id="view-revenue" class="view">
+        <header class="command-header">
+          <div>
+            <h1>Revenue Flow</h1>
+            <p class="subtitle">Contract → Invoice → Payment → Recognition</p>
           </div>
-
-          <form id="contact-form" class="form-grid">
-            <input name="name" type="text" placeholder="Full name" required>
-            <input name="company" type="text" placeholder="Company" required>
-            <input name="email" type="email" placeholder="Email" required>
-            <select name="status" required>
-              <option value="Lead">Lead</option>
-              <option value="Qualified">Qualified</option>
-              <option value="Customer">Customer</option>
-            </select>
-            <button class="secondary-button" type="submit">Add Contact</button>
-          </form>
-
-          <div id="contacts-list" class="stack"></div>
-        </article>
-
-        <article class="panel" id="deals">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Revenue</p>
-              <h3>Deals</h3>
-            </div>
+        </header>
+        <div class="revenue-pipeline">
+          <div class="pipeline-column">
+            <h4>📄 Contracts</h4>
+            <div id="pipeline-contracts" class="pipeline-list"></div>
           </div>
-
-          <form id="deal-form" class="form-grid">
-            <input name="title" type="text" placeholder="Deal title" required>
-            <input name="owner" type="text" placeholder="Owner" required>
-            <input name="value" type="number" min="0" step="100" placeholder="Value" required>
-            <select name="stage" required>
-              <option value="Discovery">Discovery</option>
-              <option value="Proposal">Proposal</option>
-              <option value="Negotiation">Negotiation</option>
-              <option value="Won">Won</option>
-            </select>
-            <button class="secondary-button" type="submit">Add Deal</button>
-          </form>
-
-          <div id="deals-board" class="deal-board"></div>
-        </article>
+          <div class="pipeline-column">
+            <h4>🧾 Invoices</h4>
+            <div id="pipeline-invoices" class="pipeline-list"></div>
+          </div>
+          <div class="pipeline-column">
+            <h4>💳 Payments</h4>
+            <div id="pipeline-payments" class="pipeline-list"></div>
+          </div>
+          <div class="pipeline-column">
+            <h4>✅ Recognized</h4>
+            <div id="pipeline-recognized" class="pipeline-list"></div>
+          </div>
+        </div>
       </section>
 
-      <section class="grid two-column">
-        <article class="panel" id="tasks">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Execution</p>
-              <h3>Tasks</h3>
-            </div>
+      <section id="view-accounts" class="view">
+        <header class="command-header">
+          <div>
+            <h1>Accounts</h1>
+            <p class="subtitle">Customer health and revenue status</p>
           </div>
-
-          <form id="task-form" class="form-grid">
-            <input name="title" type="text" placeholder="Task title" required>
-            <input name="owner" type="text" placeholder="Owner" required>
-            <input name="dueDate" type="date" required>
-            <select name="priority" required>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-            <button class="secondary-button" type="submit">Add Task</button>
-          </form>
-
-          <div id="tasks-list" class="stack"></div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Context</p>
-              <h3>Recent Activity</h3>
+        </header>
+        <section class="accounts-grid">
+          <article class="card account-card">
+            <div class="account-header">
+              <h4 id="account-name">Account Name</h4>
+              <span class="badge health-good">Healthy</span>
             </div>
-          </div>
+            <div class="account-metrics">
+              <div class="metric">
+                <span>LTV</span>
+                <strong id="account-ltv">$0</strong>
+              </div>
+              <div class="metric">
+                <span>Contracts</span>
+                <strong id="account-contracts">0</strong>
+              </div>
+              <div class="metric">
+                <span>Health</span>
+                <strong id="account-health">100%</strong>
+              </div>
+            </div>
+          </article>
+        </section>
+      </section>
 
-          <div id="activity-list" class="stack"></div>
-        </article>
+      <section id="view-exceptions" class="view">
+        <header class="command-header">
+          <div>
+            <h1>Exceptions</h1>
+            <p class="subtitle">System never hides problems</p>
+          </div>
+        </header>
+        <section class="exceptions-grid" id="exceptions-list">
+          <p class="empty">No exceptions. All systems operational.</p>
+        </section>
+      </section>
+
+      <section id="view-insights" class="view">
+        <header class="command-header">
+          <div>
+            <h1>Insights</h1>
+            <p class="subtitle">AI-powered predictions and anomalies</p>
+          </div>
+        </header>
+        
+        <section class="ai-panel">
+          <div class="ai-input">
+            <input type="text" id="ai-query" placeholder="Ask: Why was revenue delayed?" />
+            <button class="ai-submit">Ask AI</button>
+          </div>
+          <div id="ai-response" class="ai-response">
+            <p class="placeholder">AI is ready. Ask a question about your revenue.</p>
+          </div>
+        </section>
+        
+        <section class="insights-grid">
+          <article class="card insight-card">
+            <h4>🔮 Predictions</h4>
+            <div id="predictions-list">
+              <p class="empty">No predictions yet.</p>
+            </div>
+          </article>
+          <article class="card insight-card">
+            <h4>⚠️ Anomalies</h4>
+            <div id="anomalies-list">
+              <p class="empty">No anomalies detected.</p>
+            </div>
+          </article>
+        </section>
       </section>
     </main>
+
+    <aside class="context-panel">
+      <h4>🤖 AI Assistant</h4>
+      <div class="ai-context">
+        <p>Ask anything about your revenue.</p>
+        <div class="quick-actions">
+          <button class="quick-btn" data-query="Why is revenue down?">Why revenue down?</button>
+          <button class="quick-btn" data-query="Show risky accounts">Risky accounts</button>
+          <button class="quick-btn" data-query="Revenue forecast">Forecast</button>
+        </div>
+      </div>
+    </aside>
   </div>
 
   <script src="./app.js"></script>

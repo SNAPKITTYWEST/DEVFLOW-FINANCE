@@ -299,6 +299,61 @@ function render() {
   renderActivity();
   runSovereignAnalytics();
   refreshOracles();
+  initNavigation();
+}
+
+function initNavigation() {
+  var navItems = document.querySelectorAll('.nav-item[data-view]');
+  for (var i = 0; i < navItems.length; i++) {
+    navItems[i].addEventListener('click', function(e) {
+      e.preventDefault();
+      var view = this.getAttribute('data-view');
+      switchView(view);
+    });
+  }
+  
+  var quickBtns = document.querySelectorAll('.quick-btn[data-query]');
+  for (var j = 0; j < quickBtns.length; j++) {
+    quickBtns[j].addEventListener('click', function() {
+      var query = this.getAttribute('data-query');
+      handleAIQuery(query);
+    });
+  }
+}
+
+function switchView(viewName) {
+  var navItems = document.querySelectorAll('.nav-item[data-view]');
+  for (var i = 0; i < navItems.length; i++) {
+    navItems[i].classList.remove('active');
+  }
+  
+  var views = document.querySelectorAll('.view');
+  for (var j = 0; j < views.length; j++) {
+    views[j].classList.remove('active');
+  }
+  
+  var activeNav = document.querySelector('.nav-item[data-view="' + viewName + '"]');
+  var activeView = document.getElementById('view-' + viewName);
+  
+  if (activeNav) activeNav.classList.add('active');
+  if (activeView) activeView.classList.add('active');
+}
+
+function handleAIQuery(query) {
+  console.log("[AI] Query:", query);
+  
+  var responses = {
+    "Why is revenue down?": "Revenue is down because several deals are stuck in 'Proposal' stage. Consider following up with 3 accounts that have been idle for 14+ days.",
+    "Show risky accounts": "3 accounts show risk signals: Peak Ledger (payment overdue 30 days), Northwind Labs (health score dropped 40%), Verve Studio (no activity 45 days).",
+    "Revenue forecast": "Based on current pipeline ($62,900), projected revenue next quarter is $48,500 if all deals close at current rate. SCS score supports $35,000 in credit."
+  };
+  
+  var response = responses[query] || "Analyzing your revenue data... " + query;
+  
+  var aiResponse = document.getElementById('ai-response');
+  if (aiResponse) {
+    aiResponse.innerHTML = '<p>' + response + '</p>';
+  }
 }
 
 function runSovereignAnalytics() {
