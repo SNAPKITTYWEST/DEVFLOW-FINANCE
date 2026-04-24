@@ -260,6 +260,57 @@ function render() {
   renderDeals();
   renderTasks();
   renderActivity();
+  runSovereignAnalytics();
+}
+
+function runSovereignAnalytics() {
+  var pipelineValue = getOpenPipelineValueDollars();
+  var wonDealsValue = getWonDealsValue();
+  
+  var totalLiquid = 0;
+  var totalVault = 0;
+  var nonProfitBalance = 0;
+  var bCorpBalance = 0;
+  
+  if (state.funds && state.funds.entities) {
+    for (var i = 0; i < state.funds.entities.length; i++) {
+      var entity = state.funds.entities[i];
+      totalLiquid += entity.balance;
+      totalVault += entity.vault || 0;
+      if (entity.type === "nonprofit") {
+        nonProfitBalance = entity.balance;
+      } else if (entity.type === "bcorp") {
+        bCorpBalance = entity.balance;
+      }
+    }
+  }
+  
+  var totalAssets = totalLiquid + totalVault;
+  var tradeVolume = wonDealsValue;
+  
+  var baseScore = 500;
+  if (totalAssets > 0) {
+    baseScore += Math.min(150, Math.round((totalAssets / (tradeVolume + 1)) * 50));
+  }
+  if (tradeVolume > 0) {
+    baseScore += Math.min(100, Math.round(Math.log10(tradeVolume + 1) * 20));
+  }
+  
+  var scs = Math.min(850, Math.max(300, baseScore));
+  var newStatus = "EXPANDING";
+  if (scs >= 700) {
+    newStatus = "MINIMAL RISK";
+  } else if (scs >= 600) {
+    newStatus = "STABLE";
+  } else if (scs >= 500) {
+    newStatus = "GROWTH";
+  }
+  
+  if (state.funds) {
+    state.funds.sovereignCreditScore = scs;
+  }
+  
+  console.log("[ANALYTICS] SCS:", scs, "| Status:", newStatus, "| Net:", totalLiquid - pipelineValue);
 }
 
 function renderStats() {
@@ -540,11 +591,32 @@ function getActiveEntity() {
 }
 
 function getOpenDeals() {
-  return state.deals.filter((deal) => deal.stage !== "Won");
+  var result = [];
+  for (var i = 0; i < state.deals.length; i++) {
+    if (state.deals[i].stage !== "Won") {
+      result.push(state.deals[i]);
+    }
+  }
+  return result;
+}
+
+function getWonDealsValue() {
+  var total = 0;
+  for (var i = 0; i < state.deals.length; i++) {
+    if (state.deals[i].stage === "Won") {
+      total += state.deals[i].value;
+    }
+  }
+  return total;
 }
 
 function getOpenPipelineValueDollars() {
-  return getOpenDeals().reduce((total, deal) => total + deal.value, 0);
+  var openDeals = getOpenDeals();
+  var total = 0;
+  for (var i = 0; i < openDeals.length; i++) {
+    total += openDeals[i].value;
+  }
+  return total;
 }
 
 async function fetchCollectiveBalance(slug) {
