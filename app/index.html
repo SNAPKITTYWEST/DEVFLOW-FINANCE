@@ -3,326 +3,466 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SnapKitty OS | Financial Control Tower</title>
+  <title>DevFlow OS | Sovereign Financial Core</title>
   <link rel="stylesheet" href="./styles.css">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/svg+xml" href="./logo.svg">
 </head>
-<body>
-  <div class="shell">
-    <div id="heartbeat-indicator" class="heartbeat" title="System Online">
-      <span class="heartbeat-dot"></span>
-      <span class="heartbeat-label">System Online</span>
-    </div>
-    
-    <section class="sovereign-intelligence-bar">
-      <div class="intel-card">
-        <label>Sovereign Credit (SCS)</label>
-        <div id="scs-display" class="value">650</div>
-        <span id="scs-risk-badge" class="badge risk-medium">Expansionary</span>
+<body class="theme-dark">
+  <div class="app-shell">
+    <!-- GLOBAL HEADER -->
+    <header class="global-header">
+      <div class="header-left">
+        <div class="brand">
+          <img src="./logo.svg" alt="DevFlow" class="brand-logo">
+          <span class="brand-name">DevFlow OS</span>
+          <span class="brand-badge">Sovereign</span>
+        </div>
       </div>
-      <div class="intel-card">
-        <label>Liquidity Coverage Ratio</label>
-        <div id="lcr-ratio" class="value">0.00</div>
-        <div class="meta">SSOT Verified</div>
+      
+      <div class="header-center">
+        <div class="global-search">
+          <span class="search-icon">⌘K</span>
+          <input type="text" placeholder="Search commands, entities, transactions..." class="search-input">
+          <span class="search-hint">Type / for commands</span>
+        </div>
       </div>
-      <div class="intel-card">
-        <label>Total Liquidity</label>
-        <div id="total-liquidity-display" class="value">$0</div>
-        <div class="meta">Canonical Ledger</div>
+      
+      <div class="header-right">
+        <button class="header-btn" title="Notifications">
+          <span class="icon">🔔</span>
+          <span class="badge-dot"></span>
+        </button>
+        <button class="header-btn" title="Quick Actions">
+          <span class="icon">⚡</span>
+        </button>
+        <div class="user-menu">
+          <div class="user-avatar">JD</div>
+        </div>
       </div>
-      <div class="intel-card">
-        <label>Vault Anchor</label>
-        <div id="vault-anchor" class="value">$0</div>
-        <div class="meta">Asset-Backed</div>
-      </div>
-    </section>
-    
-    <nav class="nav-rail">
-      <div class="nav-logo">
-        <img src="./logo.svg" alt="SnapKitty" style="width: 40px; height: 40px;">
-      </div>
-      <nav class="nav-items">
-        <a href="#today" class="nav-item active" data-view="today">
-          <span class="nav-icon">📊</span>
-          <span class="nav-label">Today</span>
-        </a>
-        <a href="#revenue" class="nav-item" data-view="revenue">
-          <span class="nav-icon">💰</span>
-          <span class="nav-label">Revenue</span>
-        </a>
-        <a href="#ledger" class="nav-item" data-view="ledger">
-          <span class="nav-icon">🧾</span>
-          <span class="nav-label">Ledger</span>
-        </a>
-        <a href="#tax" class="nav-item" data-view="tax">
-          <span class="nav-icon">📋</span>
-          <span class="nav-label">Tax</span>
-        </a>
-        <a href="#accounts" class="nav-item" data-view="accounts">
-          <span class="nav-icon">🏢</span>
-          <span class="nav-label">Accounts</span>
-        </a>
-        <a href="#exceptions" class="nav-item" data-view="exceptions">
-          <span class="nav-icon">⚠️</span>
-          <span class="nav-label">Exceptions</span>
-        </a>
-        <a href="#insights" class="nav-item" data-view="insights">
-          <span class="nav-icon">🤖</span>
-          <span class="nav-label">AI Ops</span>
-        </a>
-        <a href="mobile.html" class="nav-item mobile-link" target="_blank">
-          <span class="nav-icon">📱</span>
-          <span class="nav-label">Capture</span>
-        </a>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+      <!-- LEFT NAV RAIL -->
+      <nav class="nav-rail">
+        <div class="nav-section">
+          <div class="nav-logo">
+            <img src="./logo.svg" alt="SnapKitty" style="width: 32px; height: 32px;">
+          </div>
+        </div>
+        
+        <div class="nav-section nav-primary">
+          <a href="#today" class="nav-item active" data-view="today" title="Command Center">
+            <span class="nav-icon">◉</span>
+            <span class="nav-tooltip">Command</span>
+          </a>
+          <a href="#revenue" class="nav-item" data-view="revenue" title="Revenue Flow">
+            <span class="nav-icon">↥</span>
+            <span class="nav-tooltip">Revenue</span>
+          </a>
+          <a href="#ledger" class="nav-item" data-view="ledger" title="Canonical Ledger">
+            <span class="nav-icon">≋</span>
+            <span class="nav-tooltip">Ledger</span>
+          </a>
+          <a href="#procurement" class="nav-item" data-view="procurement" title="Procurement">
+            <span class="nav-icon">⤳</span>
+            <span class="nav-tooltip">Procure</span>
+          </a>
+          <a href="#tax" class="nav-item" data-view="tax" title="Tax + Compliance">
+            <span class="nav-icon">◈</span>
+            <span class="nav-tooltip">Tax</span>
+          </a>
+        </div>
+        
+        <div class="nav-section nav-secondary">
+          <a href="#accounts" class="nav-item" data-view="accounts" title="Accounts">
+            <span class="nav-icon">◪</span>
+            <span class="nav-tooltip">Accounts</span>
+          </a>
+          <a href="#insights" class="nav-item" data-view="insights" title="AI Insights">
+            <span class="nav-icon">◉</span>
+            <span class="nav-tooltip">AI</span>
+          </a>
+        </div>
+        
+        <div class="nav-section nav-bottom">
+          <a href="mobile.html" class="nav-item mobile-link" target="_blank" title="Mobile Capture">
+            <span class="nav-icon">⬡</span>
+            <span class="nav-tooltip">Capture</span>
+          </a>
+          <div id="heartbeat-indicator" class="heartbeat" title="All Systems Operational">
+            <span class="heartbeat-dot online"></span>
+          </div>
+        </div>
       </nav>
-    </nav>
 
-    <main class="workspace">
-      <section id="view-today" class="view active">
-        <header class="command-header">
-          <div>
-            <h1>Command Center</h1>
-            <p class="subtitle">What's happening today</p>
-          </div>
-          <div class="command-stats">
-            <div class="mini-stat">
-              <strong id="today-revenue">$0</strong>
-              <span>Revenue Today</span>
+      <!-- WORKSPACE -->
+      <main class="workspace">
+        <!-- VIEW: COMMAND CENTER -->
+        <section id="view-today" class="view active">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>Command Center</h1>
+              <p class="view-subtitle">Real-time financial orchestration</p>
             </div>
-            <div class="mini-stat warning">
-              <strong id="today-actions">0</strong>
-              <span>Needs Attention</span>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="syncOpenCollective()">
+                <span>↻</span> Sync Ledger
+              </button>
+              <button class="btn btn-primary">
+                <span>+</span> New Transaction
+              </button>
             </div>
-            <div class="mini-stat">
-              <strong id="today-pending">0</strong>
-              <span>Pending</span>
-            </div>
-          </div>
-        </header>
-
-        <section class="dashboard-grid">
-          <section class="card alert-card">
-            <h4>⚠️ Needs Attention</h4>
-            <div id="attention-list" class="activity-list">
-              <p class="empty">All clear! No issues.</p>
-            </div>
-          </section>
+          </header>
           
-          <section class="card flow-card">
-            <h4>💰 Revenue Flow</h4>
-            <div id="revenue-flow-canvas" class="flow-canvas">
-              <div class="flow-node" data-stage="contract">
-                <div class="node-icon">📄</div>
-                <div class="node-label">Contracts</div>
-                <div class="node-count" id="contract-count">0</div>
-              </div>
-              <div class="flow-arrow">→</div>
-              <div class="flow-node" data-stage="invoice">
-                <div class="node-icon">🧾</div>
-                <div class="node-label">Invoices</div>
-                <div class="node-count" id="invoice-count">0</div>
-              </div>
-              <div class="flow-arrow">→</div>
-              <div class="flow-node" data-stage="payment">
-                <div class="node-icon">💳</div>
-                <div class="node-label">Payments</div>
-                <div class="node-count" id="payment-count">0</div>
-              </div>
-              <div class="flow-arrow">→</div>
-              <div class="flow-node" data-stage="recognition">
-                <div class="node-icon">✅</div>
-                <div class="node-label">Recognized</div>
-                <div class="node-count" id="recognition-count">0</div>
-              </div>
+          <!-- INTELLIGENCE STRIP -->
+          <div class="intel-strip">
+            <div class="intel-chip">
+              <span class="chip-label">SCS</span>
+              <span class="chip-value" id="scs-display">650</span>
+              <span class="chip-status risk-medium" id="scs-badge">Expansionary</span>
             </div>
-          </section>
+            <div class="intel-chip">
+              <span class="chip-label">LCR</span>
+              <span class="chip-value" id="lcr-ratio">0.00</span>
+              <span class="chip-status">SSOT</span>
+            </div>
+            <div class="intel-chip">
+              <span class="chip-label">Liquidity</span>
+              <span class="chip-value currency" id="total-liquidity-display">$0</span>
+            </div>
+            <div class="intel-chip">
+              <span class="chip-label">Vault</span>
+              <span class="chip-value currency" id="vault-anchor">$0</span>
+            </div>
+          </div>
           
-          <section class="card event-card">
-            <h4>📡 Live Events</h4>
-            <div id="event-stream" class="event-stream">
-              <p class="empty">Waiting for events...</p>
+          <!-- DASHBOARD GRID -->
+          <div class="dashboard-grid">
+            <div class="grid-panel panel-alerts">
+              <div class="panel-header">
+                <h3>⚠️ Attention Required</h3>
+                <span class="panel-count" id="alert-count">0</span>
+              </div>
+              <div class="panel-content" id="attention-list">
+                <p class="empty">All systems operational</p>
+              </div>
             </div>
+            
+            <div class="grid-panel panel-revenue">
+              <div class="panel-header">
+                <h3>↥ Revenue Flow</h3>
+                <div class="panel-tabs">
+                  <button class="tab active">Day</button>
+                  <button class="tab">Week</button>
+                  <button class="tab">Month</button>
+                </div>
+              </div>
+              <div class="panel-content flow-canvas">
+                <div class="flow-stage" data-stage="contracts">
+                  <div class="stage-icon">◫</div>
+                  <div class="stage-label">Contracts</div>
+                  <div class="stage-count" id="contract-count">0</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage" data-stage="invoices">
+                  <div class="stage-icon">≋</div>
+                  <div class="stage-label">Invoices</div>
+                  <div class="stage-count" id="invoice-count">0</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage" data-stage="payments">
+                  <div class="stage-icon">⬡</div>
+                  <div class="stage-label">Payments</div>
+                  <div class="stage-count" id="payment-count">0</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage" data-stage="recognized">
+                  <div class="stage-icon">✓</div>
+                  <div class="stage-label">Recognized</div>
+                  <div class="stage-count" id="recognition-count">0</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="grid-panel panel-activity">
+              <div class="panel-header">
+                <h3>📡 Live Events</h3>
+              </div>
+              <div class="panel-content" id="activity-list">
+                <p class="empty">Waiting for events...</p>
+              </div>
+            </div>
+            
+            <div class="grid-panel panel-stats">
+              <div class="mini-stat">
+                <span class="stat-value" id="today-revenue">$0</span>
+                <span class="stat-label">Revenue Today</span>
+              </div>
+              <div class="mini-stat warning">
+                <span class="stat-value" id="today-actions">0</span>
+                <span class="stat-label">Pending Actions</span>
+              </div>
+              <div class="mini-stat">
+                <span class="stat-value" id="today-pending">0</span>
+                <span class="stat-label">In Progress</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: REVENUE -->
+        <section id="view-revenue" class="view">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>Revenue Flow</h1>
+              <p class="view-subtitle">Contract → Invoice → Payment → Recognition</p>
+            </div>
+          </header>
+          <div class="revenue-pipeline">
+            <div class="pipeline-column">
+              <h4>◫ Contracts</h4>
+              <div id="pipeline-contracts" class="pipeline-list"></div>
+            </div>
+            <div class="pipeline-column">
+              <h4>≋ Invoices</h4>
+              <div id="pipeline-invoices" class="pipeline-list"></div>
+            </div>
+            <div class="pipeline-column">
+              <h4>⬡ Payments</h4>
+              <div id="pipeline-payments" class="pipeline-list"></div>
+            </div>
+            <div class="pipeline-column">
+              <h4>✓ Recognized</h4>
+              <div id="pipeline-recognized" class="pipeline-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: LEDGER -->
+        <section id="view-ledger" class="view">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>Canonical Ledger</h1>
+              <p class="view-subtitle">Full financial traceability • Immutable audit trail</p>
+            </div>
+          </header>
+          <div class="ledger-container">
+            <div class="ledger-summary">
+              <div class="ledger-stat">
+                <span class="stat-label">Total Balance</span>
+                <span class="stat-value currency" id="ledger-balance">$0</span>
+              </div>
+              <div class="ledger-stat">
+                <span class="stat-label">Vault</span>
+                <span class="stat-value currency" id="ledger-vault">$0</span>
+              </div>
+              <div class="ledger-stat">
+                <span class="stat-label">Last Reconciled</span>
+                <span class="stat-value" id="ledger-reconciled">--</span>
+              </div>
+            </div>
+            <div class="ledger-timeline" id="ledger-timeline">
+              <p class="empty">Loading ledger events...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: PROCUREMENT -->
+        <section id="view-procurement" class="view">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>Procurement</h1>
+              <p class="view-subtitle">Purchase Orders → Vendors → Receipts</p>
+            </div>
+          </header>
+          <div class="procurement-grid">
+            <div class="grid-panel">
+              <div class="panel-header">
+                <h3>Vendors</h3>
+              </div>
+              <div class="panel-content" id="vendor-list">
+                <p class="empty">No vendors yet</p>
+              </div>
+            </div>
+            <div class="grid-panel">
+              <div class="panel-header">
+                <h3>Purchase Orders</h3>
+              </div>
+              <div class="panel-content" id="po-list">
+                <p class="empty">No purchase orders</p>
+              </div>
+            </div>
+            <div class="grid-panel">
+              <div class="panel-header">
+                <h3>Receipts</h3>
+              </div>
+              <div class="panel-content" id="receipt-list">
+                <p class="empty">No receipts</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: TAX -->
+        <section id="view-tax" class="view">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>Tax + Compliance</h1>
+              <p class="view-subtitle">Regulatory readiness and audit preparedness</p>
+            </div>
+          </header>
+          <div class="tax-dashboard">
+            <div class="tax-summary-cards">
+              <div class="tax-card">
+                <label>Deductible Total</label>
+                <span class="value currency" id="tax-deductible">$0</span>
+              </div>
+              <div class="tax-card">
+                <label>Tax Liability</label>
+                <span class="value currency" id="tax-liability">$0</span>
+              </div>
+              <div class="tax-card">
+                <label>Audit Readiness</label>
+                <span class="value" id="audit-readiness-score">--</span>
+              </div>
+            </div>
+            <div class="tax-risk-panel">
+              <div class="panel">
+                <h4>⚠️ Flagged</h4>
+                <div id="tax-flagged-list">
+                  <p class="empty">No flagged transactions</p>
+                </div>
+              </div>
+              <div class="panel">
+                <h4>📋 Missing Docs</h4>
+                <div id="tax-missing-docs">
+                  <p class="empty">All documentation present</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: ACCOUNTS -->
+        <section id="view-accounts" class="view">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>Accounts</h1>
+              <p class="view-subtitle">Customer health and revenue status</p>
+            </div>
+          </header>
+          <section class="accounts-grid">
+            <article class="account-card">
+              <div class="account-header">
+                <h4 id="account-name">Select Account</h4>
+                <span class="badge">--</span>
+              </div>
+              <div class="account-metrics">
+                <div class="metric">
+                  <span>LTV</span>
+                  <strong id="account-ltv">$0</strong>
+                </div>
+                <div class="metric">
+                  <span>Health</span>
+                  <strong id="account-health">--</strong>
+                </div>
+              </div>
+            </article>
           </section>
         </section>
-      </section>
 
-      <section id="view-revenue" class="view">
-        <header class="command-header">
-          <div>
-            <h1>Revenue Flow</h1>
-            <p class="subtitle">Contract → Invoice → Payment → Recognition</p>
-          </div>
-        </header>
-        <div class="revenue-pipeline">
-          <div class="pipeline-column">
-            <h4>📄 Contracts</h4>
-            <div id="pipeline-contracts" class="pipeline-list"></div>
-          </div>
-          <div class="pipeline-column">
-            <h4>🧾 Invoices</h4>
-            <div id="pipeline-invoices" class="pipeline-list"></div>
-          </div>
-          <div class="pipeline-column">
-            <h4>💳 Payments</h4>
-            <div id="pipeline-payments" class="pipeline-list"></div>
-          </div>
-          <div class="pipeline-column">
-            <h4>✅ Recognized</h4>
-            <div id="pipeline-recognized" class="pipeline-list"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-ledger" class="view">
-        <header class="command-header">
-          <div>
-            <h1>Canonical Ledger</h1>
-            <p class="subtitle">Full financial traceability • Event-driven audit trail</p>
-          </div>
-        </header>
-        <section class="ledger-timeline">
-          <div class="timeline-stream" id="ledger-timeline">
-            <p class="empty">Loading ledger events...</p>
-          </div>
-        </section>
-        <section class="ledger-details" id="ledger-details" style="display:none;">
-          <div class="detail-card">
-            <h4>Event Details</h4>
-            <div id="event-detail-json"></div>
-          </div>
-          <div class="detail-card">
-            <h4>Ledger State</h4>
-            <div id="ledger-state-json"></div>
-          </div>
-        </section>
-      </section>
-
-      <section id="view-tax" class="view">
-        <header class="command-header">
-          <div>
-            <h1>Tax + Compliance</h1>
-            <p class="subtitle">Regulatory readiness and audit preparedness</p>
-          </div>
-          <div class="tax-summary-cards">
-            <div class="tax-card">
-              <label>Deductible Total</label>
-              <div id="tax-deductible" class="value">$0</div>
+        <!-- VIEW: INSIGHTS -->
+        <section id="view-insights" class="view">
+          <header class="view-header">
+            <div class="view-title">
+              <h1>AI Operations</h1>
+              <p class="view-subtitle">Intelligent automation and insights</p>
             </div>
-            <div class="tax-card">
-              <label>Tax Liability Est.</label>
-              <div id="tax-liability" class="value">$0</div>
+          </header>
+          <div class="ai-panel">
+            <div class="ai-input">
+              <input type="text" id="ai-query" placeholder="Ask: Why was revenue delayed?">
+              <button class="ai-submit">Ask AI</button>
             </div>
-            <div class="tax-card">
-              <label>Audit Readiness</label>
-              <div id="audit-readiness-score" class="value">--</div>
+            <div class="ai-response" id="ai-response">
+              <p class="placeholder">AI is ready. Ask a question about your finances.</p>
             </div>
           </div>
-        </header>
-        <section class="tax-risk-panel">
-          <article class="card tax-risk-card">
-            <h4>⚠️ Flagged Transactions</h4>
-            <div id="tax-flagged-list">
-              <p class="empty">No flagged transactions.</p>
-            </div>
-          </article>
-          <article class="card tax-risk-card">
-            <h4>🔍 Missing Documentation</h4>
-            <div id="tax-missing-docs">
-              <p class="empty">All documentation present.</p>
-            </div>
-          </article>
-        </section>
-      </section>
-
-      <section id="view-accounts" class="view">
-        <header class="command-header">
-          <div>
-            <h1>Accounts</h1>
-            <p class="subtitle">Customer health and revenue status</p>
-          </div>
-        </header>
-        <section class="accounts-grid">
-          <article class="card account-card">
-            <div class="account-header">
-              <h4 id="account-name">Account Name</h4>
-              <span class="badge health-good">Healthy</span>
-            </div>
-            <div class="account-metrics">
-              <div class="metric">
-                <span>LTV</span>
-                <strong id="account-ltv">$0</strong>
+          <div class="insights-grid">
+            <article class="card">
+              <h4>Predictions</h4>
+              <div id="predictions-list">
+                <p class="empty">No predictions yet</p>
               </div>
-              <div class="metric">
-                <span>Contracts</span>
-                <strong id="account-contracts">0</strong>
+            </article>
+            <article class="card">
+              <h4>Anomalies</h4>
+              <div id="anomalies-list">
+                <p class="empty">No anomalies</p>
               </div>
-              <div class="metric">
-                <span>Health</span>
-                <strong id="account-health">100%</strong>
-              </div>
-            </div>
-          </article>
+            </article>
+          </div>
         </section>
-      </section>
+      </main>
 
-      <section id="view-exceptions" class="view">
-        <header class="command-header">
-          <div>
-            <h1>Exceptions</h1>
-            <p class="subtitle">System never hides problems</p>
-          </div>
-        </header>
-        <section class="exceptions-grid" id="exceptions-list">
-          <p class="empty">No exceptions. All systems operational.</p>
-        </section>
-      </section>
-
-      <section id="view-insights" class="view">
-        <header class="command-header">
-          <div>
-            <h1>Insights</h1>
-            <p class="subtitle">AI-powered predictions and anomalies</p>
-          </div>
-        </header>
-        
-        <section class="ai-panel">
-          <div class="ai-input">
-            <input type="text" id="ai-query" placeholder="Ask: Why was revenue delayed?" />
-            <button class="ai-submit">Ask AI</button>
-          </div>
-          <div id="ai-response" class="ai-response">
-            <p class="placeholder">AI is ready. Ask a question about your revenue.</p>
-          </div>
-        </section>
-        
-        <section class="insights-grid">
-          <article class="card insight-card">
-            <h4>🔮 Predictions</h4>
-            <div id="predictions-list">
-              <p class="empty">No predictions yet.</p>
-            </div>
-          </article>
-          <article class="card insight-card">
-            <h4>⚠️ Anomalies</h4>
-            <div id="anomalies-list">
-              <p class="empty">No anomalies detected.</p>
-            </div>
-          </article>
-        </section>
-      </section>
-    </main>
-
-    <aside class="context-panel">
-      <h4>🤖 AI Assistant</h4>
-      <div class="ai-context">
-        <p>Ask anything about your revenue.</p>
+      <!-- CONTEXT PANEL -->
+      <aside class="context-panel">
+        <h4>◉ Quick Actions</h4>
         <div class="quick-actions">
-          <button class="quick-btn" data-query="Why is revenue down?">Why revenue down?</button>
-          <button class="quick-btn" data-query="Show risky accounts">Risky accounts</button>
-          <button class="quick-btn" data-query="Revenue forecast">Forecast</button>
+          <button class="action-btn" data-action="new-contract">
+            <span class="action-icon">◫</span>
+            <span>New Contract</span>
+          </button>
+          <button class="action-btn" data-action="new-invoice">
+            <span class="action-icon">≋</span>
+            <span>Create Invoice</span>
+          </button>
+          <button class="action-btn" data-action="new-vendor">
+            <span class="action-icon">◈</span>
+            <span>Add Vendor</span>
+          </button>
+          <button class="action-btn" data-action="sync-ledger">
+            <span class="action-icon">↻</span>
+            <span>Sync Ledger</span>
+          </button>
         </div>
+        
+        <h4>System Status</h4>
+        <div class="system-status">
+          <div class="status-item">
+            <span class="status-dot online"></span>
+            <span>Bifrost Bridge</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot online"></span>
+            <span>Oracle</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot online"></span>
+            <span>Event Bus</span>
+          </div>
+        </div>
+        
+        <div class="panel-footer">
+          <span class="version">DevFlow OS v2.1.0</span>
+        </div>
+      </aside>
+    </div>
+
+    <!-- COMMAND BAR -->
+    <footer class="command-bar">
+      <div class="command-status">
+        <span class="status-indicator online"></span>
+        <span>All Systems Operational</span>
       </div>
-    </aside>
+      <div class="command-info">
+        <span>Entities: <strong id="entity-count">2</strong></span>
+        <span class="separator">|</span>
+        <span>Last Sync: <strong id="last-sync">--</strong></span>
+      </div>
+    </footer>
   </div>
 
   <script src="./app.js"></script>
