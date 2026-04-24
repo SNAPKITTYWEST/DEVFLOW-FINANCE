@@ -7,6 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("user")
+  avatar       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Entity {
   id        String   @id @default(uuid())
   name      String
@@ -15,6 +26,58 @@ model Entity {
   vault     BigInt   @default(0)
   currency  String   @default("USD")
   updatedAt DateTime @updatedAt
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  name     String
+  email    String?
+  phone    String?
+  company  String?
+  status   String   @default("lead")
+  source   String?
+  notes    String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  name      String
+  email    String?
+  phone    String?
+  company  String?
+  source   String?
+  status   String   @default("new")
+  score    Int      @default(50)
+  converted Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  name     String
+  type     String?
+  domain   String?
+  industry String?
+  website  String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Interaction {
+  id         String   @id @default(uuid())
+  type       String
+  subject    String?
+  content   String
+  metadata  Json?
+  contactId String?
+  leadId    String?
+  userId    String?
+  createdAt DateTime @default(now())
 }
 
 model ActivityLog {
@@ -33,4 +96,13 @@ model BankConnection {
   status       String   @default("active")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Integration {
+  id        String   @id @default(uuid())
+  provider  String
+  config   Json
+  status   String   @default("connected")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

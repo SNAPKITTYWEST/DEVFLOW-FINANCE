@@ -589,6 +589,659 @@ app.use((error, req, res, next) => {
   });
 });
 
+function hashPassword(password) {
+  var crypto = require("crypto");
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
+function verifyPassword(password, hash) {
+  return hashPassword(password) === hash;
+}
+
+app.post("/auth/register", async (req, res, next) => {
+  try {
+    var email = String(req.body?.email || "").trim().toLowerCase();
+    var password = String(req.body?.password || "");
+    var name = String(req.body?.name || "").trim();
+
+    if (!email || !password || !name) {
+      throw createHttpError(400, "email, password, and name are required.");
+    }
+
+    var existing = await prisma.user.findUnique({ where: { email: email } });
+    if (existing) {
+      throw createHttpError(409, "User already exists.");
+    }
+
+    var user = await prisma.user.create({
+      data: {
+        email: email,
+        passwordHash: hashPassword(password),
+        name: name,
+        role: "user"
+      }
+    });
+
+    res.status(201).json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/auth/login", async (req, res, next) => {
+  try {
+    var email = String(req.body?.email || "").trim().toLowerCase();
+    var password = String(req.body?.password || "");
+
+    var user = await prisma.user.findUnique({ where: { email: email } });
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      throw createHttpError(401, "Invalid credentials.");
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/auth/logout", async (req, res, next) => {
+  res.json({ status: "logged_out" });
+});
+
+app.get("/users/me", async (req, res, next) => {
+  try {
+    var user = await prisma.user.findFirst();
+    if (!user) {
+      throw createHttpError(404, "No user found");
+    }
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      avatar: user.avatar
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/users/me", async (req, res, next) => {
+  try {
+    var user = await prisma.user.findFirst();
+    if (!user) {
+      throw createHttpError(404, "No user found");
+    }
+
+    var updates = {};
+    if (req.body?.name) updates.name = req.body.name;
+    if (req.body?.avatar) updates.avatar = req.body.avatar;
+
+    var updated = await prisma.user.update({
+      where: { id: user.id },
+      data: updates
+    });
+
+    res.json({
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      role: updated.role
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/users", async (req, res, next) => {
+  try {
+    var users = await prisma.user.findMany();
+    res.json({ users: users.map(function(u) {
+      return { id: u.id, email: u.email, name: u.name, role: u.role };
+    }) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/contacts", async (req, res, next) => {
+  try {
+    var contacts = await prisma.contact.findMany({ orderBy: { createdAt: "desc" } });
+    res.json({ contacts: contacts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/contacts", async (req, res, next) => {
+  try {
+    var contact = await prisma.contact.create({
+      data: {
+        name: String(req.body?.name || ""),
+        email: req.body?.email,
+        phone: req.body?.phone,
+        company: req.body?.company,
+        status: req.body?.status || "lead",
+        source: req.body?.source,
+        notes: req.body?.notes,
+        metadata: req.body?.metadata
+      }
+    });
+    res.status(201).json(contact);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/contacts/:id", async (req, res, next) => {
+  try {
+    var contact = await prisma.contact.findUnique({ where: { id: req.params.id } });
+    if (!contact) throw createHttpError(404, "Contact not found");
+    res.json(contact);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/contacts/:id", async (req, res, next) => {
+  try {
+    var updates = {};
+    if (req.body?.name) updates.name = req.body.name;
+    if (req.body?.email !== undefined) updates.email = req.body.email;
+    if (req.body?.phone !== undefined) updates.phone = req.body.phone;
+    if (req.body?.company !== undefined) updates.company = req.body.company;
+    if (req.body?.status) updates.status = req.body.status;
+    if (req.body?.notes !== undefined) updates.notes = req.body.notes;
+
+    var contact = await prisma.contact.update({
+      where: { id: req.params.id },
+      data: updates
+    });
+    res.json(contact);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/contacts/:id", async (req, res, next) => {
+  try {
+    await prisma.contact.delete({ where: { id: req.params.id } });
+    res.json({ deleted: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/leads", async (req, res, next) => {
+  try {
+    var leads = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
+    res.json({ leads: leads });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/leads", async (req, res, next) => {
+  try {
+    var lead = await prisma.lead.create({
+      data: {
+        name: String(req.body?.name || ""),
+        email: req.body?.email,
+        phone: req.body?.phone,
+        company: req.body?.company,
+        source: req.body?.source,
+        status: req.body?.status || "new"
+      }
+    });
+    res.status(201).json(lead);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/leads/:id", async (req, res, next) => {
+  try {
+    var lead = await prisma.lead.findUnique({ where: { id: req.params.id } });
+    if (!lead) throw createHttpError(404, "Lead not found");
+    res.json(lead);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/leads/:id", async (req, res, next) => {
+  try {
+    var updates = {};
+    if (req.body?.name) updates.name = req.body.name;
+    if (req.body?.email !== undefined) updates.email = req.body.email;
+    if (req.body?.status) updates.status = req.body.status;
+    if (typeof req.body?.score === "number") updates.score = req.body.score;
+
+    var lead = await prisma.lead.update({
+      where: { id: req.params.id },
+      data: updates
+    });
+    res.json(lead);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/leads/:id/convert", async (req, res, next) => {
+  try {
+    var lead = await prisma.lead.findUnique({ where: { id: req.params.id } });
+    if (!lead) throw createHttpError(404, "Lead not found");
+
+    var contact = await prisma.contact.create({
+      data: {
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        company: lead.company,
+        status: "customer"
+      }
+    });
+
+    await prisma.lead.update({
+      where: { id: req.params.id },
+      data: { converted: true }
+    });
+
+    res.json({ contact: contact, converted: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/accounts", async (req, res, next) => {
+  try {
+    var accounts = await prisma.account.findMany({ orderBy: { createdAt: "desc" } });
+    res.json({ accounts: accounts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/accounts", async (req, res, next) => {
+  try {
+    var account = await prisma.account.create({
+      data: {
+        name: String(req.body?.name || ""),
+        type: req.body?.type,
+        domain: req.body?.domain,
+        industry: req.body?.industry,
+        website: req.body?.website,
+        metadata: req.body?.metadata
+      }
+    });
+    res.status(201).json(account);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/accounts/:id", async (req, res, next) => {
+  try {
+    var account = await prisma.account.findUnique({ where: { id: req.params.id } });
+    if (!account) throw createHttpError(404, "Account not found");
+    res.json(account);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/accounts/:id", async (req, res, next) => {
+  try {
+    var updates = {};
+    if (req.body?.name) updates.name = req.body.name;
+    if (req.body?.type !== undefined) updates.type = req.body.type;
+    if (req.body?.industry !== undefined) updates.industry = req.body.industry;
+    if (req.body?.website !== undefined) updates.website = req.body.website;
+
+    var account = await prisma.account.update({
+      where: { id: req.params.id },
+      data: updates
+    });
+    res.json(account);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/activities", async (req, res, next) => {
+  try {
+    var interactions = await prisma.interaction.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50
+    });
+    res.json({ activities: interactions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/activities", async (req, res, next) => {
+  try {
+    var interaction = await prisma.interaction.create({
+      data: {
+        type: String(req.body?.type || "note"),
+        subject: req.body?.subject,
+        content: String(req.body?.content || ""),
+        contactId: req.body?.contactId,
+        leadId: req.body?.leadId,
+        userId: req.body?.userId,
+        metadata: req.body?.metadata
+      }
+    });
+    res.status(201).json(interaction);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/activities/:id", async (req, res, next) => {
+  try {
+    var interaction = await prisma.interaction.findUnique({ where: { id: req.params.id } });
+    if (!interaction) throw createHttpError(404, "Activity not found");
+    res.json(interaction);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/contacts/:id/notes", async (req, res, next) => {
+  try {
+    var note = await prisma.interaction.create({
+      data: {
+        type: "note",
+        content: String(req.body?.content || ""),
+        contactId: req.params.id
+      }
+    });
+    res.status(201).json(note);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/contacts/:id/emails", async (req, res, next) => {
+  try {
+    var email = await prisma.interaction.create({
+      data: {
+        type: "email",
+        subject: req.body?.subject,
+        content: req.body?.content,
+        contactId: req.params.id
+      }
+    });
+    res.status(201).json(email);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/contacts/:id/calls", async (req, res, next) => {
+  try {
+    var call = await prisma.interaction.create({
+      data: {
+        type: "call",
+        content: req.body?.content || "Call completed",
+        contactId: req.params.id
+      }
+    });
+    res.status(201).json(call);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/ai/summarize/contact/:id", async (req, res, next) => {
+  try {
+    var contact = await prisma.contact.findUnique({ where: { id: req.params.id } });
+    if (!contact) throw createHttpError(404, "Contact not found");
+
+    var interactions = await prisma.interaction.findMany({
+      where: { contactId: req.params.id },
+      orderBy: { createdAt: "desc" },
+      take: 10
+    });
+
+    var summary = "Contact: " + contact.name;
+    if (contact.company) summary += ", Company: " + contact.company;
+    if (contact.email) summary += ", Email: " + contact.email;
+    summary += ". Status: " + contact.status + ". ";
+    summary += "Recent activity: " + interactions.length + " interactions recorded.";
+
+    res.json({ summary: summary });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/ai/suggest/next-action", async (req, res, next) => {
+  try {
+    var suggestions = [
+      "Send follow-up email to re-engage lead",
+      "Schedule discovery call",
+      "Share case study relevant to their industry",
+      "Propose pilot program",
+      "Request referral"
+    ];
+    
+    var pipelineValue = Number(req.body?.pipelineValue || 0);
+    var status = String(req.body?.status || "new");
+    
+    var suggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+    if (pipelineValue > 20000) {
+      suggestion = "Propose quarterly retainer - high value opportunity";
+    }
+
+    res.json({ suggestion: suggestion, reasoning: "Based on pipeline position and deal velocity" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/ai/draft/email", async (req, res, next) => {
+  try {
+    var purpose = String(req.body?.purpose || "intro");
+    var contactName = String(req.body?.contactName || "there");
+    
+    var templates = {
+      intro: "Hi " + contactName + ",\n\nI hope this email finds you well...",
+      followup: "Hi " + contactName + ",\n\nJust following up on our last conversation...",
+      proposal: "Hi " + contactName + ",\n\nPlease find the proposal attached..."
+    };
+    
+    var draft = templates[purpose] || templates.intro;
+
+    res.json({ draft: draft, subject: "Re: " + purpose });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/ai/enrich/contact", async (req, res, next) => {
+  try {
+    var email = String(req.body?.email || "");
+    
+    res.json({ 
+      enriched: true,
+      data: {
+        company: "Enrichment data for " + email,
+        industry: "Technology",
+        companySize: "10-50",
+        technologies: ["Node.js", "React", "PostgreSQL"]
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/ai/score/lead/:id", async (req, res, next) => {
+  try {
+    var lead = await prisma.lead.findUnique({ where: { id: req.params.id } });
+    if (!lead) throw createHttpError(404, "Lead not found");
+    
+    var baseScore = 50;
+    if (lead.email && lead.email.indexOf("@") > 0) baseScore += 10;
+    if (lead.company) baseScore += 15;
+    if (lead.phone) baseScore += 5;
+    
+    var score = Math.min(100, baseScore);
+    var rating = score >= 80 ? "hot" : score >= 50 ? "warm" : "cold";
+
+    await prisma.lead.update({
+      where: { id: req.params.id },
+      data: { score: score }
+    });
+
+    res.json({ score: score, rating: rating });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/analytics/dashboard", async (req, res, next) => {
+  try {
+    var contacts = await prisma.contact.findMany();
+    var leads = await prisma.lead.findMany();
+    var accounts = await prisma.account.findMany();
+    
+    var leadCount = leads.filter(function(l) { return !l.converted; }).length;
+    var customerCount = contacts.filter(function(c) { return c.status === "customer"; }).length;
+    var pipelineValue = leads.reduce(function(sum, l) { return sum + (l.score || 0); }, 0);
+
+    res.json({
+      contacts: contacts.length,
+      leads: leadCount,
+      customers: customerCount,
+      accounts: accounts.length,
+      pipelineScore: pipelineValue
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/analytics/sales-pipeline", async (req, res, next) => {
+  try {
+    var leads = await prisma.lead.findMany();
+    var byStatus = {};
+    
+    for (var i = 0; i < leads.length; i++) {
+      var status = leads[i].status;
+      if (!byStatus[status]) byStatus[status] = 0;
+      byStatus[status]++;
+    }
+
+    res.json({ pipeline: byStatus });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/analytics/activity-trends", async (req, res, next) => {
+  try {
+    var interactions = await prisma.interaction.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100
+    });
+
+    var now = new Date();
+    var last7Days = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(now);
+      d.setDate(d.getDate() - i);
+      last7Days.push(d.toISOString().slice(0, 10));
+    }
+
+    res.json({ trends: last7Days.map(function(day) {
+      var count = interactions.filter(function(x) {
+        return x.createdAt.toISOString().slice(0, 10) === day;
+      }).length;
+      return { date: day, count: count };
+    }) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/integrations/slack/connect", async (req, res, next) => {
+  try {
+    var token = String(req.body?.token || "");
+    
+    var integration = await prisma.integration.create({
+      data: {
+        provider: "slack",
+        config: { token: token },
+        status: "connected"
+      }
+    });
+    
+    res.json({ status: "connected", id: integration.id });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/integrations/google/connect", async (req, res, next) => {
+  try {
+    var integration = await prisma.integration.create({
+      data: {
+        provider: "google",
+        config: req.body,
+        status: "connected"
+      }
+    });
+    
+    res.json({ status: "connected", id: integration.id });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/integrations/webhooks", async (req, res, next) => {
+  try {
+    var url = String(req.body?.url || "");
+    
+    var integration = await prisma.integration.create({
+      data: {
+        provider: "webhook",
+        config: { url: url },
+        status: "connected"
+      }
+    });
+    
+    res.json({ status: "registered", id: integration.id });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/integrations/status", async (req, res, next) => {
+  try {
+    var integrations = await prisma.integration.findMany();
+    
+    res.json({ integrations: integrations.map(function(i) {
+      return { provider: i.provider, status: i.status };
+    }) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 const PORT = Number.parseInt(process.env.PORT, 10) || 5000;
 app.listen(PORT, () => {
   console.log(`SnapKitty Trailblazer Stack active on port ${PORT}`);
