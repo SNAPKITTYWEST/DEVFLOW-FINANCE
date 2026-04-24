@@ -1710,28 +1710,27 @@ app.post("/api/procurement/receipts", requireAuth, async (req, res, next) => {
 app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
-║         DEVFlow Sovereign OS - Bifrost Bridge Ready          ║
+║         SnapKitty OS - Sovereign Financial Core             ║
 ╠═══════════════════════════════════════════════════════════════╣
-║  Oracle Endpoints:                                          ║
-║  • POST /api/finance/bifrost/sync    Multi-Entity Ledger    ║
-║  • GET  /api/oracle/proof-of-reserve  Asset Verification     ║
-║  • GET  /api/oracle/risk-pulse      Liquidity Risk Model   ║
-║  • GET  /api/oracle/collateral-power Vault Power Oracle     ║
-║  • GET  /api/oracle/heartbeat       System Health          ║
+║  Ledger:                                                  ║
+║  • POST /api/finance/bifrost/sync    Multi-Entity Sync       ║
+║  • GET  /api/ledger/summary        Canonical Ledger        ║
+║  • GET  /api/ledger/events        Event Stream             ║
+║  • GET  /api/tax/summary          Tax + Compliance        ║
 ╠═══════════════════════════════════════════════════════════════╣
-║  Ledger + Tax:                                              ║
-║  • GET  /api/ledger/summary        Canonical Ledger         ║
-║  • GET  /api/ledger/events        Event Stream              ║
-║  • GET  /api/tax/summary          Tax + Compliance         ║
+║  Revenue:                                                 ║
+║  • GET/POST /api/revenue/contracts   Contracts            ║
+║  • GET/POST /api/revenue/invoices    Invoices             ║
+║  • GET/POST /api/revenue/payments  Payments            ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Procurement:                                             ║
-║  • GET/POST /api/procurement/vendors    Vendor Mgmt     ║
-║  • GET/POST /api/procurement/purchase-orders  PO Flow    ║
-║  • POST /api/procurement/receipts    Receipt → Ledger    ║
+║  • GET/POST /api/procurement/vendors    Vendor Mgmt        ║
+║  • GET/POST /api/procurement/purchase-orders  PO Flow          ║
+║  • POST /api/procurement/receipts    Receipt → Ledger        ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Integrations:                                            ║
-║  • GET  /api/quickbooks/auth     OAuth2 Connect        ║
-║  • GET  /api/quickbooks/sync    Sync Transactions    ║
+║  • GET  /api/quickbooks/auth     OAuth2 Connect              ║
+║  • GET  /api/quickbooks/sync    Sync Transactions          ║
 ╚═══════════════════════════════════════════════════════════════╝
   `);
 });
