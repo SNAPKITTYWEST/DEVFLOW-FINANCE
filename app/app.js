@@ -1,6 +1,6 @@
 const STORAGE_KEY = "devflow-crm-state";
 const API_BASE_URL = "http://localhost:5000";
-const OPEN_COLLECTIVE_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/collective/sync`;
+const BIFROST_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/bifrost/sync`;
 const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
 const runtimeState = {
@@ -39,6 +39,7 @@ function createDualLedgerState() {
         type: "nonprofit",
         slug: "snapkitty",
         balance: 0,
+        vault: 0,
         currency: "USD",
         lastSync: "Never"
       },
@@ -48,11 +49,13 @@ function createDualLedgerState() {
         type: "bcorp",
         slug: "snapkitty",
         balance: 0,
+        vault: 0,
         currency: "USD",
         lastSync: "Never"
       }
     ],
-    activeEntityId: "digital-inclusion-fund"
+    activeEntityId: "digital-inclusion-fund",
+    sovereignCreditScore: 650
   };
 }
 
@@ -67,6 +70,11 @@ const elements = {
   fundBalance: document.querySelector("#fund-balance"),
   entitySelector: document.querySelector("#entity-selector"),
   entityType: document.querySelector("#entity-type"),
+  difBalance: document.querySelector("#dif-balance"),
+  opBalance: document.querySelector("#op-balance"),
+  vaultBalance: document.querySelector("#vault-balance"),
+  scsGauge: document.querySelector("#scs-gauge"),
+  scsBadge: document.querySelector("#scs-badge"),
   contactsList: document.querySelector("#contacts-list"),
   dealsBoard: document.querySelector("#deals-board"),
   tasksList: document.querySelector("#tasks-list"),
@@ -271,23 +279,50 @@ function renderStats() {
 }
 
 function renderFinanceCard() {
-  const pipelineValue = getOpenPipelineValueDollars();
-  const activeEntity = getActiveEntity();
-  const entityBalance = activeEntity ? activeEntity.balance : 0;
-  const ratio = pipelineValue > 0 ? entityBalance / pipelineValue : 1;
+  var pipelineValue = getOpenPipelineValueDollars();
+  var activeEntity = getActiveEntity();
+  var entityBalance = activeEntity ? activeEntity.balance : 0;
+  
+  var totalLiquid = 0;
+  var totalVault = 0;
+  if (state.funds && state.funds.entities) {
+    for (var i = 0; i < state.funds.entities.length; i++) {
+      totalLiquid += state.funds.entities[i].balance;
+      totalVault += state.funds.entities[i].vault || 0;
+    }
+  }
+  
+  var ratio = pipelineValue > 0 ? entityBalance / pipelineValue : (pipelineValue === 0 ? 1 : 0);
+  
+  var scs = state.funds && state.funds.sovereignCreditScore ? state.funds.sovereignCreditScore : 650;
+  var scsLabel = " Expansionary ";
+  var scsClass = "medium";
+  if (scs >= 700) {
+    scsLabel = " Minimal Risk ";
+    scsClass = "low";
+  } else if (scs < 600) {
+    scsLabel = " Expansionary ";
+    scsClass = "high";
+  }
 
   elements.sovereigntyRatio.textContent = ratio.toFixed(2);
-  elements.fundBalance.textContent = formatCurrency(entityBalance, activeEntity?.currency || "USD", 2);
-  elements.entitySelector.value = state.funds.activeEntityId;
-  elements.entityType.textContent = activeEntity?.type === "nonprofit" ? "🏛️ Non-Profit" : "💼 B-Corp";
+  elements.fundBalance.textContent = formatCurrency(entityBalance, activeEntity ? activeEntity.currency : "USD", 2);
+  elements.difBalance.textContent = formatCurrency(totalLiquid, "USD", 2);
+  elements.opBalance.textContent = formatCurrency(totalVault, "USD", 2);
+  elements.vaultBalance.textContent = formatCurrency(totalVault, "USD", 2);
+  elements.scsGauge.textContent = String(scs);
+  elements.scsBadge.textContent = scsLabel;
+  elements.scsBadge.className = "badge " + scsClass;
+  elements.entitySelector.value = state.funds ? state.funds.activeEntityId : "digital-inclusion-fund";
+  elements.entityType.textContent = activeEntity && activeEntity.type === "nonprofit" ? "🏛️ Non-Profit" : "💼 B-Corp";
 
   elements.syncButton.disabled = runtimeState.collectiveSyncPending;
   elements.syncButton.textContent = runtimeState.collectiveSyncPending
     ? "Syncing..."
-    : `🔄 Sync ${activeEntity?.name || "Fund"}`;
+    : "🔄 Sync Bifrost Bridge";
 
-  if (activeEntity?.lastSync && activeEntity.lastSync !== "Never") {
-    elements.syncButton.title = `Last synced ${activeEntity.lastSync}`;
+  if (activeEntity && activeEntity.lastSync && activeEntity.lastSync !== "Never") {
+    elements.syncButton.title = "Last synced " + activeEntity.lastSync;
   } else {
     elements.syncButton.removeAttribute("title");
   }
@@ -405,33 +440,53 @@ function renderActivity() {
 }
 
 async function syncOpenCollective() {
-  const activeEntity = getActiveEntity();
+  var activeEntity = getActiveEntity();
   runtimeState.collectiveSyncPending = true;
-  pushActivity(`📡 Syncing ${activeEntity?.name}...`);
+  pushActivity("Syncing Bifrost Bridge...");
   renderFinanceCard();
   renderActivity();
 
   try {
-    const collectiveSnapshot = await fetchCollectiveBalance(activeEntity?.slug);
-
-    state = {
-      ...state,
-      funds: {
-        ...state.funds,
-        entities: state.funds.entities.map((entity) =>
-          entity.id === state.funds.activeEntityId
-            ? { ...entity, balance: collectiveSnapshot.balance, currency: collectiveSnapshot.currency, lastSync: timestampLabel() }
-            : entity
-        )
+    var response = await fetch(BIFROST_SYNC_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    
+    if (!response.ok) {
+      throw new Error("Bifrost sync failed");
+    }
+    
+    var data = await response.json();
+    
+    var newEntities = [];
+    if (data.entities && data.entities.length > 0) {
+      for (var i = 0; i < data.entities.length; i++) {
+        var e = data.entities[i];
+        newEntities.push({
+          id: e.id,
+          name: e.name,
+          type: e.type,
+          slug: "snapkitty",
+          balance: e.balance || 0,
+          vault: e.vault || 0,
+          currency: e.currency || "USD",
+          lastSync: timestampLabel()
+        });
       }
-    };
-    pushActivity(
-      `✅ ${activeEntity?.name}: ${formatCurrency(state.funds.entities.find(e => e.id === state.funds.activeEntityId).balance, activeEntity?.currency, 2)}`
-    );
+    }
+    
+    var newSCS = data.sovereignCreditScore || 650;
+    
+    state.funds.entities = newEntities;
+    state.funds.sovereignCreditScore = newSCS;
+    
+    var totalLiquid = data.totalLiquid || 0;
+    var totalVault = data.totalVault || 0;
+    pushActivity("Bifrost Sync: Liquid $" + totalLiquid + " | Vault $" + totalVault + " | SCS " + newSCS);
     persistState();
     render();
   } catch (error) {
-    pushActivity(`❌ Sync Error: ${error.message || "Connection failed"}`);
+    pushActivity("Bifrost Sync Error: " + (error.message || "Connection failed"));
     persistState();
     render();
   } finally {

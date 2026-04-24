@@ -314,6 +314,46 @@ button {
   color: var(--muted);
 }
 
+.scs-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.scs-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.nexus-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--panel-strong);
+  border-radius: 6px;
+}
+
+.nexus-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nexus-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.nexus-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .card-top,
 .deal-meta,
 .task-meta {

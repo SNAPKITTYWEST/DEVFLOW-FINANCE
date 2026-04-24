@@ -67,18 +67,31 @@
 
           <hr>
 
-          <h4>Fund Selector</h4>
-          <select id="entity-selector" class="entity-selector">
-            <option value="digital-inclusion-fund">Digital Inclusion Fund</option>
-            <option value="operating-revenue">Operating Revenue</option>
-          </select>
-          <span id="entity-type" class="entity-type">🏛️ Non-Profit</span>
+          <h4>SCS Gauge</h4>
+          <div class="scs-display">
+            <span id="scs-gauge" class="scs-value">650</span>
+            <span id="scs-badge" class="badge medium">Expansionary</span>
+          </div>
 
           <hr>
 
-          <h4>Fund Balance</h4>
-          <div id="fund-balance" class="stat-value">$0</div>
-          <button id="sync-button" type="button" class="btn-sync">🔄 Sync Fund</button>
+          <h4>Lexus Nexus Intelligence</h4>
+          <div class="nexus-breakdown">
+            <div class="nexus-row">
+              <span class="nexus-label">DIF:</span>
+              <span id="dif-balance" class="nexus-value">$0</span>
+            </div>
+            <div class="nexus-row">
+              <span class="nexus-label">Operating:</span>
+              <span id="op-balance" class="nexus-value">$0</span>
+            </div>
+            <div class="nexus-row">
+              <span class="nexus-label">💎 Trust Vault:</span>
+              <span id="vault-balance" class="nexus-value">$0</span>
+            </div>
+          </div>
+
+          <button id="sync-button" type="button" class="btn-sync">🔄 Sync Bifrost Bridge</button>
         </section>
       </section>
 
