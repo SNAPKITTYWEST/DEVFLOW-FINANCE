@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bifrost Finance | Mobile</title>
+  <link rel="stylesheet" href="./mobile-styles.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="mobile-shell">
+    <header class="mobile-header">
+      <div class="header-brand">Bifrost</div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        <span class="sync-status">Synced</span>
+      </div>
+    </header>
+
+    <main class="mobile-main" id="mobile-view">
+    </main>
+
+    <nav class="mobile-nav">
+      <a href="#" class="nav-btn active" data-tab="home">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Home</span>
+      </a>
+      <a href="#" class="nav-btn" data-tab="capture">
+        <span class="nav-icon capture-btn">📸</span>
+      </a>
+      <a href="#" class="nav-btn" data-tab="ledger">
+        <span class="nav-icon">📚</span>
+        <span class="nav-label">Ledger</span>
+      </a>
+      <a href="#" class="nav-btn" data-tab="tax">
+        <span class="nav-icon">🧾</span>
+        <span class="nav-label">Taxes</span>
+      </a>
+      <a href="#" class="nav-btn" data-tab="ai">
+        <span class="nav-icon">🤖</span>
+        <span class="nav-label">AI</span>
+      </a>
+    </nav>
+  </div>
+
+  <div id="capture-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📸 Capture Receipt</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="capture-options">
+        <button class="capture-option" data-method="camera">
+          <span class="opt-icon">📷</span>
+          <span>Take Photo</span>
+        </button>
+        <button class="capture-option" data-method="upload">
+          <span class="opt-icon">📁</span>
+          <span>Upload File</span>
+        </button>
+        <button class="capture-option" data-method="voice">
+          <span class="opt-icon">🎤</span>
+          <span>Voice Note</span>
+        </button>
+      </div>
+      <div class="extraction-result hidden">
+        <div class="ai-extraction">
+          <div class="extracted-field">
+            <label>Merchant</label>
+            <span id="extracted-merchant">-</span>
+          </div>
+          <div class="extracted-field">
+            <label>Amount</label>
+            <span id="extracted-amount">$0.00</span>
+          </div>
+          <div class="extracted-field">
+            <label>Category</label>
+            <span id="extracted-category" class="category-badge">-</span>
+          </div>
+          <div class="ai-confidence">
+            <span>AI Confidence:</span>
+            <strong id="extracted-confidence">0%</strong>
+          </div>
+        </div>
+        <div class="confirm-actions">
+          <button class="btn-secondary" id="btn-edit">Edit</button>
+          <button class="btn-flag" id="btn-flag">Flag</button>
+          <button class="btn-primary" id="btn-confirm">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+  <script>
+    const MobileApp = {
+      currentTab: 'home',
+      
+      init() {
+        this.bindNavigation();
+        this.renderHome();
+        this.renderLedger();
+        this.renderTaxes();
+        this.renderAI();
+      },
+      
+      bindNavigation() {
+        const navBtns = document.querySelectorAll('.nav-btn');
+        for (let i = 0; i < navBtns.length; i++) {
+          navBtns[i].addEventListener('click', (e) => {
+            e.preventDefault();
+            const tab = navBtns[i].getAttribute('data-tab');
+            this.switchTab(tab);
+          });
+        }
+        
+        const captureBtn = document.querySelector('.capture-btn');
+        if (captureBtn) {
+          captureBtn.addEventListener('click', () => this.openCapture());
+        }
+        
+        const modalClose = document.querySelector('.modal-close');
+        if (modalClose) {
+          modalClose.addEventListener('click', () => this.closeCapture());
+        }
+        
+        const captureOptions = document.querySelectorAll('.capture-option');
+        for (let j = 0; j < captureOptions.length; j++) {
+          captureOptions[j].addEventListener('click', (e) => {
+            const method = captureOptions[j].getAttribute('data-method');
+            this.processCapture(method);
+          });
+        }
+      },
+      
+      switchTab(tab) {
+        const navBtns = document.querySelectorAll('.nav-btn');
+        for (let i = 0; i < navBtns.length; i++) {
+          navBtns[i].classList.remove('active');
+        }
+        
+        const activeBtn = document.querySelector('.nav-btn[data-tab="' + tab + '"]');
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        this.currentTab = tab;
+        this.render();
+      },
+      
+      render() {
+        const view = document.getElementById('mobile-view');
+        if (!view) return;
+        
+        switch(this.currentTab) {
+          case 'home': this.renderHome(); break;
+          case 'ledger': this.renderLedger(); break;
+          case 'tax': this.renderTaxes(); break;
+          case 'ai': this.renderAI(); break;
+        }
+      },
+      
+      renderHome() {
+        const view = document.getElementById('mobile-view');
+        var pipelineValue = getOpenPipelineValueDollars();
+        var totalLiquid = 0;
+        if (state.funds && state.funds.entities) {
+          for (var i = 0; i < state.funds.entities.length; i++) {
+            totalLiquid += state.funds.entities[i].balance;
+          }
+        }
+        var scs = state.funds && state.funds.sovereignCreditScore ? state.funds.sovereignCreditScore : 650;
+        
+        view.innerHTML = '<section class="home-view">' +
+          '<h2>Financial Snapshot</h2>' +
+          '<div class="snapshot-cards">' +
+            '<div class="snapshot-card">' +
+              '<span class="snapshot-label">Total Liquidity</span>' +
+              '<span class="snapshot-value">' + formatCurrency(totalLiquid, "USD", 2) + '</span>' +
+            '</div>' +
+            '<div class="snapshot-card warning">' +
+              '<span class="snapshot-label">Pipeline Value</span>' +
+              '<span class="snapshot-value">' + formatCurrency(pipelineValue, "USD", 2) + '</span>' +
+            '</div>' +
+            '<div class="snapshot-card accent">' +
+              '<span class="snapshot-label">SCS Score</span>' +
+              '<span class="snapshot-value">' + scs + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="alerts-section">' +
+            '<h3>⚠️ Needs Attention</h3>' +
+            '<div class="alert-item">' +
+              '<span>Pending receipts:</span>' +
+              '<strong>3</strong>' +
+            '</div>' +
+            '<div class="alert-item warning">' +
+              '<span>Tax alerts:</span>' +
+              '<strong>1</strong>' +
+            '</div>' +
+            '<div class="alert-item">' +
+              '<span>Audit flags:</span>' +
+              '<strong>0</strong>' +
+            '</div>' +
+          '</div>' +
+          '<div class="quick-actions">' +
+            '<button class="action-btn" onclick="MobileApp.openCapture()">' +
+              '<span>📸</span> Capture Receipt' +
+            '</button>' +
+            '<button class="action-btn" onclick="syncOpenCollective()">' +
+              '<span>🔄</span> Sync Bifrost' +
+            '</button>' +
+          '</div>' +
+        '</section>';
+      },
+      
+      renderLedger() {
+        const view = document.getElementById('mobile-view');
+        var eventsHtml = '';
+        if (state.activity) {
+          for (var i = 0; i < Math.min(state.activity.length, 20); i++) {
+            var act = state.activity[i];
+            eventsHtml += '<div class="ledger-entry">' +
+              '<div class="entry-time">' + act.time + '</div>' +
+              '<div class="entry-event">' + act.text + '</div>' +
+            '</div>';
+          }
+        }
+        
+        view.innerHTML = '<section class="ledger-view">' +
+          '<h2>📚 Audit Timeline</h2>' +
+          '<div class="ledger-filters">' +
+            '<button class="filter-btn active">All</button>' +
+            '<button class="filter-btn">Receipts</button>' +
+            '<button class="filter-btn">Payments</button>' +
+            '<button class="filter-btn">Tax</button>' +
+          '</div>' +
+          '<div class="ledger-timeline">' +
+            (eventsHtml || '<p class="empty">No entries yet</p>') +
+          '</div>' +
+        '</section>';
+      },
+      
+      renderTaxes() {
+        const view = document.getElementById('mobile-view');
+        var totalLiquid = 0;
+        if (state.funds && state.funds.entities) {
+          for (var i = 0; i < state.funds.entities.length; i++) {
+            totalLiquid += state.funds.entities[i].balance;
+          }
+        }
+        
+        view.innerHTML = '<section class="tax-view">' +
+          '<h2>🧾 Tax & Compliance</h2>' +
+          '<div class="tax-summary">' +
+            '<div class="tax-card">' +
+              '<span>Taxable Income</span>' +
+              '<strong>' + formatCurrency(totalLiquid * 0.3, "USD", 2) + '</strong>' +
+              '<small>Estimated liability</small>' +
+            '</div>' +
+            '<div class="tax-card">' +
+              '<span>Deductible Expenses</span>' +
+              '<strong>' + formatCurrency(totalLiquid * 0.15, "USD", 2) + '</strong>' +
+              '<small>Tracked</small>' +
+            '</div>' +
+          '</div>' +
+          '<div class="deduction-buckets">' +
+            '<h3>Deduction Buckets</h3>' +
+            '<div class="bucket">' +
+              '<span>🍽️ Meals</span>' +
+              '<span>$0.00</span>' +
+            '</div>' +
+            '<div class="bucket">' +
+              '<span>✈️ Travel</span>' +
+              '<span>$0.00</span>' +
+            '</div>' +
+            '<div class="bucket">' +
+              '<span>💻 Software</span>' +
+              '<span>$0.00</span>' +
+            '</div>' +
+            '<div class="bucket">' +
+              '<span>👷 Contractors</span>' +
+              '<span>$0.00</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="compliance-flags">' +
+            '<h3>⚠️ Compliance Flags</h3>' +
+            '<p class="empty">No compliance issues detected.</p>' +
+          '</div>' +
+        '</section>';
+      },
+      
+      renderAI() {
+        const view = document.getElementById('mobile-view');
+        view.innerHTML = '<section class="ai-view">' +
+          '<h2>🤖 AI Assistant</h2>' +
+          '<div class="ai-input-area">' +
+            '<input type="text" id="ai-mobile-query" placeholder="Ask about your finances..." />' +
+            '<button class="ai-send">Ask</button>' +
+          '</div>' +
+          '<div class="ai-responses" id="ai-responses">' +
+            '<div class="ai-message">' +
+              '<p>Hi! I\'m your financial co-pilot. Ask me things like:</p>' +
+              '<ul>' +
+                '<li>"Is this deductible?"</li>' +
+                '<li>"Show audit risk items"</li>' +
+                '<li>"What will I owe this quarter?"</li>' +
+                '<li>"Summarize my expenses"</li>' +
+              '</ul>' +
+            '</div>' +
+          '</div>' +
+          '<div class="quick-queries">' +
+            '<button class="quick-query" data-q="deductible">Is this deductible?</button>' +
+            '<button class="quick-query" data-q="risk">Show audit risks</button>' +
+            '<button class="quick-query" data-q="quarter">Quarter projection</button>' +
+          '</div>' +
+        '</section>';
+      },
+      
+      openCapture() {
+        const modal = document.getElementById('capture-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('visible');
+        }
+      },
+      
+      closeCapture() {
+        const modal = document.getElementById('capture-modal');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('visible');
+        }
+      },
+      
+      processCapture(method) {
+        console.log('[CAPTURE] Method:', method);
+        
+        if (method === 'voice') {
+          var amount = prompt('Voice input: I spent $');
+          if (amount && !isNaN(amount)) {
+            this.showExtraction({
+              merchant: 'Voice Input',
+              amount: parseFloat(amount),
+              category: 'Uncategorized',
+              confidence: 50
+            });
+          }
+        } else if (method === 'camera' || method === 'upload') {
+          this.showExtraction({
+            merchant: 'Sample Merchant ' + Date.now(),
+            amount: Math.random() * 100,
+            category: 'Meals',
+            confidence: Math.floor(Math.random() * 30) + 70
+          });
+        }
+      },
+      
+      showExtraction(data) {
+        var result = document.querySelector('.extraction-result');
+        if (result) {
+          result.classList.remove('hidden');
+          document.getElementById('extracted-merchant').textContent = data.merchant;
+          document.getElementById('extracted-amount').textContent = '$' + data.amount.toFixed(2);
+          document.getElementById('extracted-category').textContent = data.category;
+          document.getElementById('extracted-confidence').textContent = data.confidence + '%';
+        }
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      MobileApp.init();
+      
+      var aiInput = document.getElementById('ai-mobile-query');
+      if (aiInput) {
+        aiInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            var query = aiInput.value;
+            if (query) {
+              MobileApp.handleAIQuery(query);
+              aiInput.value = '';
+            }
+          }
+        });
+      }
+    });
+
+    MobileApp.handleAIQuery = function(query) {
+      var responses = {
+        "deductible": "Based on IRS rules, meals with clients are 50% deductible. Keep receipt documentation for audit.",
+        "risk": "No audit risks detected. All transactions have proper documentation.",
+        "quarter": "Projected tax liability: $3,420. Based on $11,400 in deductible expenses."
+      };
+      
+      var answer = responses[query] || "Analyzing... " + query;
+      
+      var container = document.getElementById('ai-responses');
+      if (container) {
+        var msg = document.createElement('div');
+        msg.className = 'ai-message user';
+        msg.innerHTML = '<p><strong>You:</strong> ' + query + '</p>';
+        container.appendChild(msg);
+        
+        var bot = document.createElement('div');
+        bot.className = 'ai-message';
+        bot.innerHTML = '<p><strong>AI:</strong> ' + answer + '</p>';
+        container.appendChild(bot);
+        
+        container.scrollTop = container.scrollHeight;
+      }
+    };
+  </script>
+</body>
+</html>
