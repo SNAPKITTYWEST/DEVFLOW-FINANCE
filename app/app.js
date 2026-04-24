@@ -75,6 +75,12 @@ const elements = {
   vaultBalance: document.querySelector("#vault-balance"),
   scsGauge: document.querySelector("#scs-gauge"),
   scsBadge: document.querySelector("#scs-badge"),
+  totalLiquidity: document.querySelector("#total-liquidity"),
+  pipelineExposure: document.querySelector("#pipeline-exposure"),
+  netPosition: document.querySelector("#net-position"),
+  vaultAnchor: document.querySelector("#vault-anchor"),
+  scsIntel: document.querySelector("#scs-intel"),
+  statusBadge: document.querySelector("#status-badge"),
   contactsList: document.querySelector("#contacts-list"),
   dealsBoard: document.querySelector("#deals-board"),
   tasksList: document.querySelector("#tasks-list"),
@@ -257,21 +263,54 @@ function render() {
 }
 
 function renderStats() {
-  const openDeals = getOpenDeals();
-  const pipelineValue = getOpenPipelineValueDollars();
-  const dueTasks = state.tasks.filter((task) => !task.completed && daysUntil(task.dueDate) <= 7);
+  var openDeals = getOpenDeals();
+  var pipelineValue = getOpenPipelineValueDollars();
+  var dueTasks = [];
+  if (state.tasks) {
+    for (var i = 0; i < state.tasks.length; i++) {
+      var task = state.tasks[i];
+      if (!task.completed && daysUntil(task.dueDate) <= 7) {
+        dueTasks.push(task);
+      }
+    }
+  }
 
-  elements.contactsCount.textContent = String(state.contacts.length);
+  var totalLiquid = 0;
+  var totalVault = 0;
+  if (state.funds && state.funds.entities) {
+    for (var j = 0; j < state.funds.entities.length; j++) {
+      totalLiquid += state.funds.entities[j].balance;
+      totalVault += state.funds.entities[j].vault || 0;
+    }
+  }
+
+  var netPosition = totalLiquid - pipelineValue;
+  var scs = state.funds && state.funds.sovereignCreditScore ? state.funds.sovereignCreditScore : 650;
+  var statusLabel = "STABLE";
+  if (netPosition > pipelineValue) {
+    statusLabel = "SOVEREIGN";
+  } else if (netPosition < 0) {
+    statusLabel = "EXPANDING";
+  }
+
+  elements.contactsCount.textContent = String(state.contacts ? state.contacts.length : 0);
   elements.openDealsCount.textContent = String(openDeals.length);
   elements.pipelineValue.textContent = formatCurrency(pipelineValue);
   elements.dueTasksCount.textContent = String(dueTasks.length);
 
+  elements.totalLiquidity.textContent = formatCurrency(totalLiquid, "USD", 0);
+  elements.pipelineExposure.textContent = formatCurrency(pipelineValue, "USD", 0);
+  elements.netPosition.textContent = formatCurrency(netPosition, "USD", 0);
+  elements.vaultAnchor.textContent = formatCurrency(totalVault, "USD", 0);
+  elements.scsIntel.textContent = String(scs);
+  elements.statusBadge.textContent = statusLabel;
+
   if (dueTasks.length > 3) {
     elements.sidebarHealth.textContent = "Attention Needed";
-    elements.sidebarHealthDetail.textContent = `${dueTasks.length} tasks due within 7 days`;
+    elements.sidebarHealthDetail.textContent = dueTasks.length + " tasks due within 7 days";
   } else if (openDeals.length >= 3) {
     elements.sidebarHealth.textContent = "Stable";
-    elements.sidebarHealthDetail.textContent = `${openDeals.length} active deals in motion`;
+    elements.sidebarHealthDetail.textContent = openDeals.length + " active deals in motion";
   } else {
     elements.sidebarHealth.textContent = "Light Load";
     elements.sidebarHealthDetail.textContent = "Pipeline has room for more outreach";
