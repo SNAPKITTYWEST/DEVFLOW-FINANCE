@@ -108,7 +108,9 @@ const elements = {
   dealForm: document.querySelector("#deal-form"),
   taskForm: document.querySelector("#task-form"),
   seedButton: document.querySelector("#seed-button"),
-  syncButton: document.querySelector("#sync-button")
+  syncButton: document.querySelector("#sync-button"),
+  heartbeatDot: document.querySelector(".heartbeat-dot"),
+  heartbeatLabel: document.querySelector(".heartbeat-label")
 };
 
 elements.contactForm.addEventListener("submit", handleContactSubmit);
@@ -823,6 +825,27 @@ async function refreshOracles() {
   console.log("[ORACLE] Risk Pulse:", riskData ? riskData.sentiment : "error");
   console.log("[ORACLE] Collateral Power:", collateralData ? collateralData.powerTier : "error");
   console.log("[ORACLE] Heartbeat:", heartbeatData ? heartbeatData.status : "error");
+  
+  if (elements.heartbeatDot && heartbeatData) {
+    var statusClass = heartbeatData.statusClass || "offline";
+    elements.heartbeatDot.className = "heartbeat-dot " + statusClass;
+    
+    var labelText = "System Online";
+    if (heartbeatData.status === "ALIVE") {
+      labelText = "All Systems Operational";
+    } else if (heartbeatData.status === "DEGRADED") {
+      labelText = "Partial Service";
+    } else {
+      labelText = "Service Disrupted";
+    }
+    if (elements.heartbeatLabel) {
+      elements.heartbeatLabel.textContent = labelText;
+    }
+    
+    if (elements.heartbeatDot.parentElement) {
+      elements.heartbeatDot.parentElement.title = labelText + " | " + new Date().toLocaleTimeString();
+    }
+  }
   
   return {
     proof: proofData,

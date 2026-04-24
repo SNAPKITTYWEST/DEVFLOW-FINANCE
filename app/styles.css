@@ -31,6 +31,51 @@ body {
     radial-gradient(circle at bottom left, rgba(0, 255, 255, 0.05), transparent 40%);
 }
 
+.heartbeat {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.heartbeat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: heartbeat-pulse 2s infinite;
+}
+
+.heartbeat-dot.healthy {
+  background: #3fb950;
+  box-shadow: 0 0 8px rgba(63, 185, 80, 0.6);
+}
+
+.heartbeat-dot.degraded {
+  background: #d29922;
+  box-shadow: 0 0 8px rgba(210, 153, 34, 0.6);
+}
+
+.heartbeat-dot.offline {
+  background: var(--danger);
+  animation: none;
+}
+
+@keyframes heartbeat-pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 .shell {
   display: grid;
   grid-template-columns: 280px 1fr;
