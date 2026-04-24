@@ -6,6 +6,13 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+let plaid;
+try {
+  plaid = require("./services/plaid");
+} catch (e) {
+  console.log("[PLAID] Service not available");
+}
+
 const prisma = new PrismaClient();
 const app = express();
 
@@ -73,8 +80,78 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "snapkitty-api",
+    integrations: {
+      plaid: !!plaid,
+      stripe: !!process.env.STRIPE_SECRET_KEY
+    },
     time: new Date().toISOString()
   });
+});
+
+app.post("/api/plaid/create-link-token", async (req, res, next) => {
+  if (!plaid) {
+    return res.status(503).json({ error: "Plaid not configured" });
+  }
+  try {
+    const userId = String(req.body?.userId || "default");
+    const linkToken = await plaid.createLinkToken(userId);
+    res.json(linkToken);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/plaid/exchange-token", async (req, res, next) => {
+  if (!plaid) {
+    return res.status(503).json({ error: "Plaid not configured" });
+  }
+  try {
+    const publicToken = String(req.body?.publicToken || "").trim();
+    if (!publicToken) {
+      return res.status(400).json({ error: "publicToken required" });
+    }
+    const result = await plaid.exchangePublicToken(publicToken);
+    
+    await prisma.bankConnection.create({
+      data: {
+        accessToken: result.accessToken,
+        itemId: result.itemId,
+        institution: "unknown"
+      }
+    });
+    
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/plaid/balances", async (req, res, next) => {
+  if (!plaid) {
+    return res.status(503).json({ error: "Plaid not configured" });
+  }
+  try {
+    const connections = await prisma.bankConnection.findMany();
+    if (!connections || connections.length === 0) {
+      return res.json({ accounts: [], sovereignty: 0 });
+    }
+    
+    var allAccounts = [];
+    for (var i = 0; i < connections.length; i++) {
+      var conn = connections[i];
+      try {
+        var accounts = await plaid.getAccountBalance(conn.accessToken);
+        allAccounts = allAccounts.concat(accounts);
+      } catch (e) {
+        console.error("[PLAID] Balance fetch error:", e.message);
+      }
+    }
+    
+    var sovereignty = plaid.calculateSovereigntyFromBalances(allAccounts);
+    res.json({ accounts: allAccounts, sovereignty: sovereignty });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get("/api/entities", async (req, res, next) => {
