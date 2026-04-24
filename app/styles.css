@@ -20,13 +20,13 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  background: var(--intel-border);
-  border: 1px solid var(--intel-border);
+  background: var(--line);
+  border: 1px solid var(--line);
   margin: 0 0 1rem 0;
 }
 
 .intel-card {
-  background: white;
+  background: var(--panel);
   padding: 1rem;
 }
 
@@ -35,25 +35,25 @@
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05rem;
-  color: #666;
+  color: var(--muted);
 }
 
 .intel-card .value {
   font-family: 'Courier New', monospace;
   font-size: 1.8rem;
   font-weight: bold;
-  color: var(--vault-purple);
+  color: var(--ink);
   margin: 0.25rem 0;
 }
 
 .intel-card .meta {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--muted);
 }
 
-.intel-card .badge.risk-low { background: #d1fae5; color: #065f46; }
-.intel-card .badge.risk-medium { background: #fef3c7; color: #92400e; }
-.intel-card .badge.risk-high { background: #fee2e2; color: #991b1b; }
+.intel-card .badge.risk-low { background: rgba(63, 185, 80, 0.2); color: var(--success); }
+.intel-card .badge.risk-medium { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
+.intel-card .badge.risk-high { background: rgba(248, 81, 73, 0.2); color: var(--danger); }
 
 * {
   box-sizing: border-box;
