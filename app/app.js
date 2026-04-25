@@ -226,13 +226,15 @@ elements.syncButton.addEventListener("click", syncOpenCollective);
 elements.entitySelector.addEventListener("change", (e) => {
   switchActiveEntity(e.currentTarget.value);
 });
-elements.seedButton.addEventListener("click", () => {
-  state = createSeedState();
-  persistState();
-  render();
-});
+if (elements.seedButton) {
+  elements.seedButton.addEventListener("click", () => {
+    state = createSeedState();
+    persistState();
+    render();
+  });
+}
 
-elements.issueCardBtn && elements.issueCardBtn.addEventListener("click", function() {
+if (elements.issueCardBtn) {
   var amount = prompt("Enter virtual card amount in USD:");
   if (amount && !isNaN(amount) && Number(amount) > 0) {
     issueVirtualCard(Number(amount));
