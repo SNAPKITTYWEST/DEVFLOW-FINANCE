@@ -28,6 +28,29 @@ const createSeedState = () => ({
     { id: crypto.randomUUID(), title: "Verve Discovery Sprint", owner: "Jessi", value: 6400, stage: "Discovery" },
     { id: crypto.randomUUID(), title: "Atlas Referral", owner: "Chris", value: 12500, stage: "Won" }
   ],
+  // Revenue Flow - ASC 606
+  contracts: [
+    { id: crypto.randomUUID(), customer: "Northwind Labs", value: 18000, status: "active", startDate: "2024-01-15", endDate: "2025-01-14" },
+    { id: crypto.randomUUID(), customer: "Peak Ledger", value: 26000, status: "active", startDate: "2024-02-01", endDate: "2025-01-31" }
+  ],
+  invoices: [
+    { id: crypto.randomUUID(), contractId: null, customer: "Northwind Labs", amount: 18000, status: "paid", issuedAt: "2024-01-15", paidAt: "2024-01-20" },
+    { id: crypto.randomUUID(), contractId: null, customer: "Peak Ledger", amount: 13000, status: "issued", issuedAt: "2024-02-15", dueDate: "2024-03-15" },
+    { id: crypto.randomUUID(), contractId: null, customer: "Verve Studio", amount: 3200, status: "draft", issuedAt: null, dueDate: null }
+  ],
+  payments: [
+    { id: crypto.randomUUID(), invoiceId: null, amount: 18000, method: "card", status: "completed", receivedAt: "2024-01-20" }
+  ],
+  // Procurement - Vendors / POs / Receipts
+  vendors: [
+    { id: crypto.randomUUID(), name: "AWS", email: "billing@aws.amazon.com", status: "active" },
+    { id: crypto.randomUUID(), name: "Stripe", email: "support@stripe.com", status: "active" },
+    { id: crypto.randomUUID(), name: "Google Cloud", email: "billing@cloud.google.com", status: "active" }
+  ],
+  purchaseOrders: [
+    { id: crypto.randomUUID(), vendorId: null, poNumber: "PO-2024-0001", amount: 2500, status: "approved", dueDate: "2024-03-01" }
+  ],
+  receipts: [],
   tasks: [
     { id: crypto.randomUUID(), title: "Send proposal revision", owner: "Jessi", dueDate: offsetDate(2), priority: "High", completed: false },
     { id: crypto.randomUUID(), title: "Book discovery call", owner: "Sam", dueDate: offsetDate(4), priority: "Medium", completed: false },
@@ -416,6 +439,8 @@ function render() {
   renderFinanceCard();
   renderLedgerTimeline();
   renderTaxDashboard();
+  renderRevenueFlow();  // NEW
+  renderProcurement();   // NEW
   renderContacts();
   renderDeals();
   renderTasks();
@@ -663,6 +688,88 @@ function renderFinanceCard() {
   }
   
   runtimeState.analyticsCache.scs = scs;
+}
+
+function renderRevenueFlow() {
+  var contractsEl = document.getElementById("pipeline-contracts");
+  var invoicesEl = document.getElementById("pipeline-invoices");
+  var paymentsEl = document.getElementById("pipeline-payments");
+  var recognizedEl = document.getElementById("pipeline-recognized");
+  
+  if (contractsEl) {
+    var contracts = state.contracts || [];
+    contractsEl.innerHTML = contracts.map(function(c) {
+      return '<article class="card"><h4>' + escapeHtml(c.customer) + '</h4><span class="badge">' + formatCurrency(c.value) + '</span><span class="badge ' + c.status + '">' + c.status + '</span></article>';
+    }).join("") || '<p class="empty">No contracts</p>';
+  }
+  
+  if (invoicesEl) {
+    var invoices = state.invoices || [];
+    invoicesEl.innerHTML = invoices.map(function(i) {
+      var badgeClass = i.status === "paid" ? "success" : (i.status === "issued" ? "warning" : "draft");
+      return '<article class="card"><h4>' + escapeHtml(i.customer) + '</h4><span class="badge">' + formatCurrency(i.amount) + '</span><span class="badge ' + badgeClass + '">' + i.status + '</span></article>';
+    }).join("") || '<p class="empty">No invoices</p>';
+  }
+  
+  if (paymentsEl) {
+    var payments = state.payments || [];
+    paymentsEl.innerHTML = payments.map(function(p) {
+      return '<article class="card"><span>' + formatCurrency(p.amount) + '</span><span class="badge">' + p.method + '</span><span class="badge completed">' + p.status + '</span></article>';
+    }).join("") || '<p class="empty">No payments</p>';
+  }
+  
+  if (recognizedEl) {
+    var totalRecognized = 0;
+    if (state.payments) {
+      for (var i = 0; i < state.payments.length; i++) {
+        if (state.payments[i].status === "completed") {
+          totalRecognized += state.payments[i].amount;
+        }
+      }
+    }
+    recognizedEl.innerHTML = '<article class="card"><span class="stat-value">' + formatCurrency(totalRecognized) + '</span><span class="meta">Total Recognized</span></article>';
+  }
+  
+  // Update stage counts
+  var contractCountEl = document.getElementById("contract-count");
+  var invoiceCountEl = document.getElementById("invoice-count");
+  var paymentCountEl = document.getElementById("payment-count");
+  var recognitionCountEl = document.getElementById("recognition-count");
+  
+  if (contractCountEl) contractCountEl.textContent = String((state.contracts || []).length);
+  if (invoiceCountEl) invoiceCountEl.textContent = String((state.invoices || []).length);
+  if (paymentCountEl) paymentCountEl.textContent = String((state.payments || []).length);
+  if (recognitionCountEl) {
+    var recCount = (state.payments || []).filter(function(p) { return p.status === "completed"; }).length;
+    recognitionCountEl.textContent = String(recCount);
+  }
+}
+
+function renderProcurement() {
+  var vendorListEl = document.getElementById("vendor-list");
+  var poListEl = document.getElementById("po-list");
+  var receiptListEl = document.getElementById("receipt-list");
+  
+  if (vendorListEl) {
+    var vendors = state.vendors || [];
+    vendorListEl.innerHTML = vendors.map(function(v) {
+      return '<article class="card"><h4>' + escapeHtml(v.name) + '</h4><p class="meta">' + (v.email || "") + '</p></article>';
+    }).join("") || '<p class="empty">No vendors</p>';
+  }
+  
+  if (poListEl) {
+    var pos = state.purchaseOrders || [];
+    poListEl.innerHTML = pos.map(function(po) {
+      return '<article class="card"><h4>' + po.poNumber + '</h4><span class="badge">' + formatCurrency(po.amount) + '</span><span class="badge ' + po.status + '">' + po.status + '</span></article>';
+    }).join("") || '<p class="empty">No purchase orders</p>';
+  }
+  
+  if (receiptListEl) {
+    var receipts = state.receipts || [];
+    receiptListEl.innerHTML = receipts.length ? receipts.map(function(r) {
+      return '<article class="card"><span>' + formatCurrency(r.amount) + '</span><span class="badge">' + r.status + '</span></article>';
+    }).join("") : '<p class="empty">No receipts</p>';
+  }
 }
 
 function renderContacts() {
