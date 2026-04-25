@@ -1287,6 +1287,46 @@ app.get("/api/revenue/rules", async (req, res, next) => {
   res.json(RevenueRecognitionEngine.getRulesSummary());
 });
 
+app.get("/api/revenue/summary", async (req, res, next) => {
+  try {
+    const [contracts, invoices, payments] = await Promise.all([
+      prisma.contract.findMany(),
+      prisma.invoice.findMany(),
+      prisma.payment.findMany()
+    ]);
+    
+    var totalContractValue = 0n;
+    for (var i = 0; i < contracts.length; i++) {
+      totalContractValue += contracts[i].value;
+    }
+    
+    var totalInvoiced = 0n;
+    var totalPaid = 0n;
+    for (var j = 0; j < invoices.length; j++) {
+      totalInvoiced += invoices[j].amount;
+    }
+    for (var k = 0; k < payments.length; k++) {
+      totalPaid += payments[k].amount;
+    }
+    
+    var recognizedRevenue = totalPaid;
+    var accountsReceivable = totalInvoiced - totalPaid;
+    
+    res.json({
+      contracts: contracts.length,
+      contractValue: totalContractValue.toString(),
+      invoices: invoices.length,
+      totalInvoiced: totalInvoiced.toString(),
+      payments: payments.length,
+      recognizedRevenue: recognizedRevenue.toString(),
+      accountsReceivable: accountsReceivable.toString(),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 const PORT = Number.parseInt(process.env.PORT, 10) || 5000;
 
 let QuickBooks;

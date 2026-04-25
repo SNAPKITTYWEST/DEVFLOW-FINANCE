@@ -1,11 +1,7 @@
 const STORAGE_KEY = "devflow-crm-state";
 const API_BASE_URL = "http://localhost:5000";
 const BIFROST_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/bifrost/sync`;
-const PROOF_OF_RESERVE_ORACLE = `${API_BASE_URL}/api/oracle/proof-of-reserve`;
-const RISK_PULSE_ORACLE = `${API_BASE_URL}/api/oracle/risk-pulse`;
-const COLLATERAL_POWER_ORACLE = `${API_BASE_URL}/api/oracle/collateral-power`;
-const HEARTBEAT_ORACLE = `${API_BASE_URL}/api/oracle/heartbeat`;
-const TRADELINE_ORACLE = `${API_BASE_URL}/api/oracle/report-tradeline`;
+const REVENUE_API = `${API_BASE_URL}/api/revenue`;
 const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
 const runtimeState = {
@@ -15,6 +11,29 @@ const runtimeState = {
   lastOracleRefresh: 0,
   reconciliationState: "OK"
 };
+
+async function fetchRevenueFromAPI(endpoint) {
+  try {
+    var res = await fetch(endpoint);
+    if (res.ok) {
+      var data = await res.json();
+      return data.contracts || data.invoices || data.payments || [];
+    }
+  } catch (e) { console.log("[REVENUE] API fetch failed:", e.message); }
+  return [];
+}
+
+function syncRevenueData() {
+  fetchRevenueFromAPI(REVENUE_API + "/contracts").then(function(contracts) {
+    if (contracts.length > 0) state.contracts = contracts;
+  });
+  fetchRevenueFromAPI(REVENUE_API + "/invoices").then(function(invoices) {
+    if (invoices.length > 0) state.invoices = invoices;
+  });
+  fetchRevenueFromAPI(REVENUE_API + "/payments").then(function(payments) {
+    if (payments.length > 0) state.payments = payments;
+  });
+}
 
 const createSeedState = () => ({
   contacts: [
@@ -435,12 +454,13 @@ function renderTaxDashboard() {
 }
 
 function render() {
+  syncRevenueData();
   renderStats();
   renderFinanceCard();
   renderLedgerTimeline();
   renderTaxDashboard();
-  renderRevenueFlow();  // NEW
-  renderProcurement();   // NEW
+  renderRevenueFlow();
+  renderProcurement();
   renderContacts();
   renderDeals();
   renderTasks();
