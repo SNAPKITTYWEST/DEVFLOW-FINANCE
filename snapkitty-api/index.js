@@ -6,6 +6,17 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+let Sentry;
+try {
+  if (process.env.SENTRY_DSN) {
+    Sentry = require("@sentry/node");
+    Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 1.0 });
+    console.log("[SENTRY] Monitoring enabled");
+  }
+} catch (e) {
+  console.log("[SENTRY] Not configured");
+}
+
 let plaid;
 try {
   plaid = require("./services/plaid");
@@ -1745,6 +1756,17 @@ app.post("/api/procurement/receipts", requireAuth, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+app.use(function (err, req, res, next) {
+  console.error("[ERROR]", err.message);
+  if (Sentry) {
+    Sentry.captureException(err);
+  }
+  res.status(err.statusCode || 500).json({
+    error: err.message || "Internal Server Error",
+    code: err.code || "INTERNAL_ERROR"
+  });
 });
 
 app.listen(PORT, () => {
