@@ -2,15 +2,51 @@ const STORAGE_KEY = "devflow-crm-state";
 const API_BASE_URL = "http://localhost:5000";
 const BIFROST_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/bifrost/sync`;
 const REVENUE_API = `${API_BASE_URL}/api/revenue`;
+const PLAID_API = `${API_BASE_URL}/api/plaid`;
 const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
 const runtimeState = {
   collectiveSyncPending: false,
+  plaidLinkToken: null,
   analyticsCache: { scs: 650, hash: "" },
   oracleRefreshPending: false,
   lastOracleRefresh: 0,
   reconciliationState: "OK"
 };
+
+async function fetchPlaidLinkToken() {
+  try {
+    var res = await fetch(PLAID_API + "/create-link-token", { method: "POST" });
+    if (res.ok) {
+      var data = await res.json();
+      return data.link_token;
+    }
+  } catch (e) { console.log("[PLAID] Link token failed:", e.message); }
+  return null;
+}
+
+async function exchangePlaidToken(publicToken) {
+  try {
+    var res = await fetch(PLAID_API + "/exchange-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicToken: publicToken })
+    });
+    return res.ok;
+  } catch (e) { console.log("[PLAID] Exchange failed:", e.message); }
+  return false;
+}
+
+async function fetchPlaidBalances() {
+  try {
+    var res = await fetch(PLAID_API + "/balances");
+    if (res.ok) {
+      var data = await res.json();
+      return data.accounts || [];
+    }
+  } catch (e) { console.log("[PLAID] Balances failed:", e.message); }
+  return [];
+}
 
 async function fetchRevenueFromAPI(endpoint) {
   try {
@@ -708,6 +744,27 @@ function renderFinanceCard() {
   }
   
   runtimeState.analyticsCache.scs = scs;
+  
+  var plaidBtn = document.getElementById("plaid-connect-btn");
+  if (plaidBtn) {
+    plaidBtn.onclick = async function() {
+      var linkToken = await fetchPlaidLinkToken();
+      if (linkToken && window.Plaid) {
+        var handler = window.Plaid.create({
+          token: linkToken,
+          onSuccess: async function(publicToken) {
+            var ok = await exchangePlaidToken(publicToken);
+            if (ok) {
+              var accounts = await fetchPlaidBalances();
+              state.funds.plaidAccounts = accounts;
+              renderFinanceCard();
+            }
+          }
+        });
+        handler.open();
+      }
+    };
+  }
 }
 
 function renderRevenueFlow() {

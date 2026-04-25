@@ -110,6 +110,9 @@
               <button class="btn btn-secondary" onclick="syncOpenCollective()">
                 <span>↻</span> Sync Ledger
               </button>
+              <button class="btn btn-secondary" id="plaid-connect-btn">
+                <span>🔗</span> Connect Bank
+              </button>
               <button class="btn btn-primary">
                 <span>+</span> New Transaction
               </button>
@@ -465,6 +468,7 @@
     </footer>
   </div>
 
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
