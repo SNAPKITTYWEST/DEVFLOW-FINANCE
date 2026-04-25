@@ -5,6 +5,8 @@ const REVENUE_API = `${API_BASE_URL}/api/revenue`;
 const PLAID_API = `${API_BASE_URL}/api/plaid`;
 const OPEN_COLLECTIVE_SLUG = "snapkitty";
 
+let state = null;
+
 const runtimeState = {
   collectiveSyncPending: false,
   plaidLinkToken: null,
@@ -61,14 +63,14 @@ async function fetchRevenueFromAPI(endpoint) {
 
 function syncRevenueData() {
   fetchRevenueFromAPI(REVENUE_API + "/contracts").then(function(contracts) {
-    if (contracts.length > 0) state.contracts = contracts;
-  });
+    if (contracts && contracts.length > 0) state.contracts = contracts;
+  }).catch(function(e) { console.log("[REVENUE] Contracts fetch failed, using local"); });
   fetchRevenueFromAPI(REVENUE_API + "/invoices").then(function(invoices) {
-    if (invoices.length > 0) state.invoices = invoices;
-  });
+    if (invoices && invoices.length > 0) state.invoices = invoices;
+  }).catch(function(e) { console.log("[REVENUE] Invoices fetch failed, using local"); });
   fetchRevenueFromAPI(REVENUE_API + "/payments").then(function(payments) {
-    if (payments.length > 0) state.payments = payments;
-  });
+    if (payments && payments.length > 0) state.payments = payments;
+  }).catch(function(e) { console.log("[REVENUE] Payments fetch failed, using local"); });
 }
 
 const createSeedState = () => ({
