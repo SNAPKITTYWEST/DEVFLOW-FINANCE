@@ -1,7 +1,5 @@
 const STORAGE_KEY = "devflow-crm-state";
-const API_BASE_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000' 
-  : 'https://snapkitty-api.onrender.com';
+const API_BASE_URL = 'http://localhost:5000';
 const BIFROST_SYNC_ENDPOINT = `${API_BASE_URL}/api/finance/bifrost/sync`;
 const REVENUE_API = `${API_BASE_URL}/api/revenue`;
 const PLAID_API = `${API_BASE_URL}/api/plaid`;
