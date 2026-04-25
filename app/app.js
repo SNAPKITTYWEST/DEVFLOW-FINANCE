@@ -490,20 +490,26 @@ function renderTaxDashboard() {
 }
 
 function render() {
-  syncRevenueData();
-  renderStats();
-  renderFinanceCard();
-  renderLedgerTimeline();
-  renderTaxDashboard();
-  renderRevenueFlow();
-  renderProcurement();
-  renderContacts();
-  renderDeals();
-  renderTasks();
-  renderActivity();
-  runSovereignAnalytics();
-  refreshOracles();
-  initNavigation();
+  try {
+    syncRevenueData();
+    renderStats();
+    renderFinanceCard();
+    renderLedgerTimeline();
+    renderTaxDashboard();
+    renderRevenueFlow();
+    renderProcurement();
+    renderContacts();
+    renderDeals();
+    renderTasks();
+    renderActivity();
+    runSovereignAnalytics();
+    refreshOracles();
+    initNavigation();
+    console.log("🏛️ Sovereign UI Rendered Successfully");
+  } catch (e) {
+    console.error("CRITICAL RENDER ERROR:", e);
+    document.body.innerHTML = `<h1 style="color:red;padding:20px">System Error: ${e.message}</h1><button onclick="localStorage.clear();location.reload()" style="padding:10px">Hard Reset System</button>`;
+  }
 }
 
 function initNavigation() {
