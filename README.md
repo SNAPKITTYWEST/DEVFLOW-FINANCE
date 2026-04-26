@@ -16,10 +16,24 @@ The system operates on a decoupled "Bifrost" bridge philosophy:
 ## 🛠 Project Build Status & Telemetry
 | Component | Status | Infrastructure |
 | :--- | :--- | :--- |
-| **Landing Page** | [DNS PENDING] | collectivekitty.com |
-| **Sovereign CRM** | [STABLE] | /app.html |
+| **Landing Page** | [ACTIVE] | collectivekitty.com |
+| **Sovereign CRM** | [STABLE] | /index.html |
+| **SAP Terminal** | [STABLE] | /app.html |
 | **Bifrost API** | [ACTIVE] | snapkitty-crm-api (Node.js) |
-| **Entra Auth** | [CONFIG] | GoDaddy M365 OIDC |
+| **Entra Auth** | [ACTIVE] | GoDaddy M365 OIDC |
+
+## 🔧 Fix 404 Errors
+If experiencing 404 at `collectivekitty.com`:
+
+1. **GitHub Pages Settings → Source**: Select `Branch: main` and `Folder: /(root)`
+2. **CNAME**: Verified (`collectivekitty.com` in file)
+3. **DNS Propagation**: Wait up to 24 hours or verify A records in GoDaddy
+4. **Required A Records**:
+   - `@` → 185.199.108.153
+   - `@` → 185.199.109.153
+   - `@` → 185.199.110.153
+   - `@` → 185.199.111.153
+5. **CNAME www**: → SNAPKITTYWEST.github.io |
 
 ## 🚀 Deployment Intelligence (Infrastructure Heartbeat)
 If `collectivekitty.com` is redirecting to GoDaddy, it is a **DNS propagation** or **A-Record** issue. 
