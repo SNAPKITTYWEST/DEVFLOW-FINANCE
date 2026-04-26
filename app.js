@@ -1,14 +1,12 @@
-// SOVEREIGN OS - PHASE 4: BIFROST API SYNC
-// ============================================================================
-// Phase 4: Full Integration with External CRM/API Endpoints + Offline-First
+// SOVEREIGN OS - PHASE 4: BIFROST INTEGRATION
 // ============================================================================
 
 const SovereignOS = {
     // CONFIG: External API Endpoints
     CONFIG: {
-        BIFROST_ENDPOINT: 'http://localhost:3000/api',
+        BIFROST_ENDPOINT: 'http://localhost:5000/api',
         SYNC_INTERVAL: 30000,
-        OFFLINE_MODE: true
+        OFFLINE_MODE: false
     },
 
     // STATE: Canonical Ledger + CRM Pipeline + Intelligence
@@ -25,20 +23,21 @@ const SovereignOS = {
                 { id: 'TX-9901', type: 'REVENUE_REC', delta: 500000, status: 'Finalized' }
             ]
         },
-        // Intelligence Hub: SCS Metrics
         intelligence: {
             scsScore: 780,
             lcr: 2.5,
             vaultValue: 250000000,
             pipelineValue: 100000000,
-            dealVelocity: 5
+            dealVelocity: 5,
+            sentiment: 'STABLE',
+            riskLevel: 'low'
         }
     },
 
-    init() {
+    async init() {
         this.loadState();
         this.render();
-        this.syncWithBifrost();
+        await this.syncWithBifrost();
         
         if (this.CONFIG.SYNC_INTERVAL > 0) {
             setInterval(() => this.syncWithBifrost(), this.CONFIG.SYNC_INTERVAL);
@@ -52,41 +51,43 @@ const SovereignOS = {
     // ============================================================================
     async syncWithBifrost() {
         const indicator = document.getElementById('sync-status');
-        if (!this.CONFIG.OFFLINE_MODE && indicator) {
+        if (indicator) {
             indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>SYNCING...';
         }
 
         try {
-            if (this.CONFIG.OFFLINE_MODE) {
-                if (indicator) indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>ORACLE: SYNCED';
-                console.log("Bifrost: Offline mode - using local state");
-                return;
+            // 1. Sync Ledger & SCS
+            const syncResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/finance/bifrost/sync`, { method: 'POST' });
+            if (syncResponse.ok) {
+                const data = await syncResponse.json();
+                this.state.intelligence.scsScore = data.sovereignCreditScore;
+                this.state.ledger.canonicalBalance = data.totalLiquid * 100;
             }
 
-            const response = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/intelligence`);
-            if (!response.ok) throw new Error('API Error');
-            
-            const data = await response.json();
-            
-            if (data.ledger) {
-                this.state.ledger.canonicalBalance = data.ledger.balance;
+            // 2. Sync Risk Pulse
+            const riskResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/oracle/risk-pulse`);
+            if (riskResponse.ok) {
+                const risk = await riskResponse.json();
+                this.state.intelligence.sentiment = risk.sentiment;
+                this.state.intelligence.riskLevel = risk.riskLevel;
             }
-            if (data.intelligence) {
-                this.state.intelligence = { ...this.state.intelligence, ...data.intelligence };
+
+            // 3. Sync Activity Log
+            const eventResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/ledger/events`);
+            if (eventResponse.ok) {
+                const eventData = await eventResponse.json();
+                if (eventData.events) {
+                    this.state.activity = eventData.events;
+                }
             }
-            
+
             this.saveState();
-            
-            if (indicator) {
-                indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>ORACLE: SYNCED';
-            }
-            
-            this.pushActivity('BIFROST_SYNC', 'Synced with external Oracle');
+            if (indicator) indicator.innerHTML = 'ORACLE: SYNCED';
             this.render();
             
         } catch (error) {
-            console.log("Bifrost: Offline fallback -", error.message);
-            if (indicator) indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>ORACLE: OFFLINE';
+            console.warn("Bifrost: Operating in Offline Mode", error.message);
+            if (indicator) indicator.innerHTML = 'ORACLE: OFFLINE';
         }
     },
 
@@ -103,7 +104,6 @@ const SovereignOS = {
 
     saveState() {
         localStorage.setItem('sovereign_state', JSON.stringify(this.state));
-        this.pushActivity('STATE_PERSIST', 'State synchronized to Bifrost Bridge');
     },
 
     pushActivity(eventType, text) {
@@ -123,9 +123,9 @@ const SovereignOS = {
     // ============================================================================
     // SCS CALCULATION: Intelligence Hub Integration
     // ============================================================================
-calculateSCS() {
+    calculateSCS() {
         const { intelligence, ledger } = this.state;
-        const lcr = intelligence.vaultValue / intelligence.pipelineValue;
+        const lcr = intelligence.vaultValue / (intelligence.pipelineValue || 1);
         
         const liquidityScore = Math.min(200, Math.floor(ledger.canonicalBalance / 1000));
         const vaultScore = Math.min(200, Math.floor(intelligence.vaultValue / 5000));
@@ -133,16 +133,20 @@ calculateSCS() {
         const lcrScore = Math.floor((lcr - 0.5) * 100) || 0;
         
         const baseScore = 400;
-        const scs = Math.min(850, Math.max(500, 
+        const localScs = Math.min(850, Math.max(500,
             baseScore + liquidityScore + vaultScore + velocityScore + lcrScore
         ));
         
-        return { scs, lcr };
+        return {
+            scs: intelligence.scsScore || localScs,
+            lcr: lcr
+        };
     },
 
     getRiskTier(scs) {
-        if (scs >= 700) return { label: 'MINIMAL RISK', class: 'low' };
-        if (scs >= 600) return { label: 'STABLE', class: 'medium' };
+        const level = this.state.intelligence.riskLevel;
+        if (level === 'minimal' || scs >= 700) return { label: 'MINIMAL RISK', class: 'low' };
+        if (level === 'medium' || scs >= 600) return { label: 'STABLE', class: 'medium' };
         return { label: 'EXPANDING', class: 'high' };
     },
 
@@ -151,32 +155,52 @@ calculateSCS() {
     // ============================================================================
     setView(view) {
         this.state.view = view;
-        document.getElementById('view-title').innerText = view.toUpperCase() + ' CONSOLE';
+        const titleEl = document.getElementById('view-title');
+        if (titleEl) titleEl.innerText = view.toUpperCase() + ' CONSOLE';
         this.render();
     },
 
     // ============================================================================
-    // CRM: Entity Registration (High-Density SAP Style)
+    // CRM: Entity Registration
     // ============================================================================
-    addContact(event) {
+    async addContact(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
-        const newContact = {
-            id: crypto.randomUUID(),
+        const contactData = {
             name: formData.get('name'),
             email: formData.get('email'),
-            status: 'Verified',
-            createdAt: new Date().toISOString()
+            type: 'entity',
+            status: 'Verified'
         };
-        this.state.contacts.unshift(newContact);
+
+        // UI Optimistic Update
+        const tempId = crypto.randomUUID();
+        this.state.contacts.unshift({ id: tempId, ...contactData });
+        this.render();
+
+        try {
+            const response = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/entities`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(contactData)
+            });
+            if (response.ok) {
+                const saved = await response.json();
+                this.state.contacts = this.state.contacts.map(c => c.id === tempId ? saved.entity : c);
+            }
+        } catch (err) {
+            console.error("API Persistence failed", err);
+        }
+
         this.saveState();
+        document.getElementById('crm-modal').style.display = 'none';
         this.setView('crm');
     },
 
     // ============================================================================
     // LEDGER: Transaction Entry
     // ============================================================================
-    addTransaction(event) {
+    async addTransaction(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
         const delta = parseInt(formData.get('delta') || '0') * 100;
@@ -191,8 +215,22 @@ calculateSCS() {
         
         this.state.ledger.history.unshift(tx);
         this.state.ledger.canonicalBalance += delta;
+
+        // Emit Tradeline
+        if (Math.abs(delta) > 100000) {
+            try {
+                await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/oracle/report-tradeline`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: Math.abs(delta) / 100, entityName: "Primary Ledger" })
+                });
+            } catch (e) {}
+        }
+
         this.saveState();
+        document.getElementById('ledger-modal').style.display = 'none';
         this.setView('ledger');
+        this.syncWithBifrost();
     },
 
     // ============================================================================
@@ -200,7 +238,12 @@ calculateSCS() {
     // ============================================================================
     render() {
         const container = document.getElementById('view-container');
+        if (!container) return;
+
         const v = this.state.view;
+        const { scs } = this.calculateSCS();
+        const scsValEl = document.getElementById('scs-val');
+        if (scsValEl) scsValEl.innerText = scs;
 
         if (v === 'intelligence') {
             this.renderIntelligence(container);
@@ -222,20 +265,22 @@ calculateSCS() {
         container.innerHTML = `
             <section class="fade-in">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                    <div style="background: white; padding: 20px; border: 1px solid var(--border);">
+                    <div class="metric-card">
                         <h3>System Health</h3>
-                        <p style="font-family: 'Courier New', monospace; color: green;">● NOMINAL</p>
+                        <p style="font-family: 'Courier New', monospace; color: ${this.state.intelligence.sentiment === 'STABLE' ? 'green' : 'orange'};">
+                            ● ${this.state.intelligence.sentiment || 'NOMINAL'}
+                        </p>
                     </div>
-                    <div style="background: white; padding: 20px; border: 1px solid var(--border);">
+                    <div class="metric-card">
                         <h3>Bifrost Status</h3>
-                        <p style="font-family: 'Courier New', monospace;">SYNCHRONIZED WITH OPEN COLLECTIVE</p>
+                        <p style="font-family: 'Courier New', monospace;">CONNECTED TO CANONICAL CORE</p>
                     </div>
-                    <div style="background: white; padding: 20px; border: 1px solid var(--border);">
+                    <div class="metric-card">
                         <h3>Sovereign Credit Score</h3>
                         <p class="balance-val" style="font-size: 1.5rem;">${scs}</p>
                         <span class="badge badge-${tier.class}">${tier.label}</span>
                     </div>
-                    <div style="background: white; padding: 20px; border: 1px solid var(--border);">
+                    <div class="metric-card">
                         <h3>Liquidity Coverage Ratio</h3>
                         <p class="balance-val" style="font-size: 1.5rem;">${lcr.toFixed(2)}x</p>
                     </div>
@@ -252,7 +297,6 @@ calculateSCS() {
         container.innerHTML = `
             <section class="fade-in">
                 <h2 style="margin-bottom: 20px;">Intelligence Hub</h2>
-                
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
                     <div class="metric-card">
                         <div class="metric-label">SOVEREIGN CREDIT SCORE</div>
@@ -264,52 +308,18 @@ calculateSCS() {
                         <div class="metric-value">${lcr.toFixed(2)}x</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-label">DEAL VELOCITY</div>
-                        <div class="metric-value">${intelligence.dealVelocity}</div>
+                        <div class="metric-label">RISK SENTIMENT</div>
+                        <div class="metric-value" style="font-size: 1.2rem;">${intelligence.sentiment}</div>
                     </div>
                 </div>
-                
                 <h3 style="margin-bottom: 15px; font-family: 'Courier New', monospace;">SCS BREAKDOWN</h3>
                 <table class="data-grid">
-                    <thead>
-                        <tr>
-                            <th>COMPONENT</th>
-                            <th>VALUE</th>
-                            <th>WEIGHT</th>
-                            <th>CONTRIBUTION</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>COMPONENT</th><th>VALUE</th><th>WEIGHT</th><th>CONTRIBUTION</th></tr></thead>
                     <tbody>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">LIQUIDITY</td>
-                            <td style="font-family: 'Courier New', monospace;">$${(this.state.ledger.canonicalBalance / 100).toLocaleString()}</td>
-                            <td style="font-family: 'Courier New', monospace;">MAX 200</td>
-                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.min(200, Math.floor(this.state.ledger.canonicalBalance / 1000))}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">VAULT VALUE</td>
-                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue / 100).toLocaleString()}</td>
-                            <td style="font-family: 'Courier New', monospace;">MAX 200</td>
-                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.min(200, Math.floor(intelligence.vaultValue / 5000))}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">VELOCITY</td>
-                            <td style="font-family: 'Courier New', monospace;">${intelligence.dealVelocity} deals/mo</td>
-                            <td style="font-family: 'Courier New', monospace;">MAX 100</td>
-                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.min(100, Math.floor(intelligence.dealVelocity * 10))}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">LCR RATIO</td>
-                            <td style="font-family: 'Courier New', monospace;">${lcr.toFixed(2)}x</td>
-                            <td style="font-family: 'Courier New', monospace;">DYNAMIC</td>
-                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.floor((lcr - 0.5) * 100) || 0}</td>
-                        </tr>
-                        <tr style="background: #f0f4f0;">
-                            <td style="font-family: 'Courier New', monospace; font-weight: bold;">BASE SCORE</td>
-                            <td></td>
-                            <td></td>
-                            <td style="font-family: 'Courier New', monospace; font-weight: bold;">+400</td>
-                        </tr>
+                        <tr><td>LIQUIDITY</td><td>$${(this.state.ledger.canonicalBalance / 100).toLocaleString()}</td><td>MAX 200</td><td>+${Math.min(200, Math.floor(this.state.ledger.canonicalBalance / 1000))}</td></tr>
+                        <tr><td>VAULT VALUE</td><td>$${(intelligence.vaultValue / 100).toLocaleString()}</td><td>MAX 200</td><td>+${Math.min(200, Math.floor(intelligence.vaultValue / 5000))}</td></tr>
+                        <tr><td>VELOCITY</td><td>${intelligence.dealVelocity} deals/mo</td><td>MAX 100</td><td>+${Math.min(100, Math.floor(intelligence.dealVelocity * 10))}</td></tr>
+                        <tr style="background: #f0f4f0;"><td>BASE SCORE</td><td></td><td></td><td>+400</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -318,11 +328,9 @@ calculateSCS() {
 
     renderVault(container) {
         const { intelligence } = this.state;
-        
         container.innerHTML = `
             <section class="fade-in">
                 <h2 style="margin-bottom: 20px;">Trust Vault</h2>
-                
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
                     <div class="metric-card">
                         <div class="metric-label">TOTAL VAULT VALUE</div>
@@ -332,43 +340,7 @@ calculateSCS() {
                         <div class="metric-label">PIPELINE VALUE</div>
                         <div class="metric-value">$${(intelligence.pipelineValue / 100).toLocaleString()}</div>
                     </div>
-                    <div class="metric-card">
-                        <div class="metric-label">COLLATERAL RATIO</div>
-                        <div class="metric-value">${(intelligence.vaultValue / intelligence.pipelineValue).toFixed(2)}x</div>
-                    </div>
                 </div>
-                
-                <h3 style="margin-bottom: 15px; font-family: 'Courier New', monospace;">VAULT SEGMENTS</h3>
-                <table class="data-grid">
-                    <thead>
-                        <tr>
-                            <th>SEGMENT ID</th>
-                            <th>TYPE</th>
-                            <th>VALUE</th>
-                            <th>STATUS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">SEG-PRIMARY-001</td>
-                            <td style="font-family: 'Courier New', monospace;">PRIMARY ASSET</td>
-                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue * 0.6 / 100).toLocaleString()}</td>
-                            <td><span class="badge badge-low">SECURED</span></td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">SEG-LIQUID-002</td>
-                            <td style="font-family: 'Courier New', monospace;">LIQUID RESERVE</td>
-                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue * 0.3 / 100).toLocaleString()}</td>
-                            <td><span class="badge badge-low">SECURED</span></td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: 'Courier New', monospace;">SEG-PROTOCOL-003</td>
-                            <td style="font-family: 'Courier New', monospace;">PROTOCOL BUFFER</td>
-                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue * 0.1 / 100).toLocaleString()}</td>
-                            <td><span class="badge badge-medium">RESERVED</span></td>
-                        </tr>
-                    </tbody>
-                </table>
             </section>
         `;
     },
@@ -378,57 +350,27 @@ calculateSCS() {
             <section class="fade-in">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>Sovereign CRM Pipeline</h2>
-                    <button onclick="document.getElementById('crm-modal').style.display='block'" 
-                        class="btn-primary" 
-                        style="padding: 10px 20px; background: var(--accent); color: white; border: none; cursor: pointer; font-family: 'Courier New', monospace;">
-                        + REGISTER ENTITY
-                    </button>
+                    <button onclick="document.getElementById('crm-modal').style.display='block'" class="btn-primary">+ REGISTER ENTITY</button>
                 </div>
-
                 <table class="data-grid">
-                    <thead>
-                        <tr>
-                            <th>ENTITY NAME</th>
-                            <th>BIFROST ENDPOINT</th>
-                            <th>STATUS</th>
-                            <th>CREATED</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>ENTITY NAME</th><th>BIFROST ENDPOINT</th><th>STATUS</th></tr></thead>
                     <tbody>
                         ${this.state.contacts.map(c => `
                             <tr>
                                 <td style="font-family: 'Georgia', serif;">${this.escapeHtml(c.name)}</td>
                                 <td style="font-family: 'Courier New', monospace;">${this.escapeHtml(c.email)}</td>
-                                <td><span class="badge badge-${c.status === 'Active' ? 'low' : 'medium'}">${c.status}</span></td>
-                                <td style="font-family: 'Courier New', monospace;">${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '-'}</td>
+                                <td><span class="badge badge-${c.status === 'Active' || c.status === 'Verified' ? 'low' : 'medium'}">${c.status}</span></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-
-                <!-- High-Density Entity Registration Modal -->
-                <div id="crm-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 500px; background:white; border: 1px solid var(--border); padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); z-index: 1000;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">
-                        <h3 style="margin: 0; font-family: 'Georgia', serif;">ENTITY REGISTRATION</h3>
-                        <button onclick="document.getElementById('crm-modal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-                    </div>
+                <div id="crm-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; background:white; border: 1px solid var(--border); padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); z-index: 1000;">
                     <form onsubmit="SovereignOS.addContact(event)">
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-size: 0.75rem; font-family: 'Courier New', monospace; color: #666;">ENTITY NAME</label>
-                            <input name="name" required 
-                                style="display: block; width: 100%; padding: 12px; border: 1px solid var(--border); font-family: 'Courier New', monospace; font-size: 0.9rem;">
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 5px; font-size: 0.75rem; font-family: 'Courier New', monospace; color: #666;">BIFROST ENDPOINT (EMAIL)</label>
-                            <input name="email" type="email" required 
-                                style="display: block; width: 100%; padding: 12px; border: 1px solid var(--border); font-family: 'Courier New', monospace; font-size: 0.9rem;">
-                        </div>
-                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                            <button type="button" onclick="document.getElementById('crm-modal').style.display='none'" 
-                                style="padding: 12px 24px; background: #e0e0e0; border: none; cursor: pointer; font-family: 'Courier New', monospace;">CANCEL</button>
-                            <button type="submit" 
-                                style="padding: 12px 24px; background: var(--accent); color: white; border: none; cursor: pointer; font-family: 'Courier New', monospace;">PROVISION ACCESS</button>
-                        </div>
+                        <h3>ENTITY REGISTRATION</h3>
+                        <input name="name" placeholder="Entity Name" required style="width:100%; margin-bottom:10px; padding:10px;">
+                        <input name="email" type="email" placeholder="Email" required style="width:100%; margin-bottom:10px; padding:10px;">
+                        <button type="submit" class="btn-primary">PROVISION</button>
+                        <button type="button" onclick="document.getElementById('crm-modal').style.display='none'">CANCEL</button>
                     </form>
                 </div>
             </section>
@@ -440,68 +382,33 @@ calculateSCS() {
             <section class="fade-in">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>Canonical Ledger (SSOT)</h2>
-                    <button onclick="document.getElementById('ledger-modal').style.display='block'" 
-                        class="btn-primary" 
-                        style="padding: 10px 20px; background: var(--accent); color: white; border: none; cursor: pointer; font-family: 'Courier New', monospace;">
-                        + NEW TRANSACTION
-                    </button>
+                    <button onclick="document.getElementById('ledger-modal').style.display='block'" class="btn-primary">+ NEW TRANSACTION</button>
                 </div>
-
                 <div class="balance-card">
-                    <div style="font-size: 0.8rem; color: #909399; font-family: 'Courier New', monospace;">PRIMARY SETTLEMENT ASSET</div>
                     <div class="balance-val">${(this.state.ledger.canonicalBalance / 100).toLocaleString('en-US', {style:'currency', currency:'USD'})}</div>
                 </div>
-
                 <table class="data-grid" style="margin-top: 20px;">
-                    <thead>
-                        <tr>
-                            <th>EVENT ID</th>
-                            <th>TYPE</th>
-                            <th>DELTA</th>
-                            <th>STATE</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>EVENT ID</th><th>TYPE</th><th>DELTA</th></tr></thead>
                     <tbody>
                         ${this.state.ledger.history.map(h => `
                             <tr>
-                                <td style="font-family: 'Courier New', monospace;">${h.id}</td>
-                                <td style="font-family: 'Courier New', monospace;">${h.type}</td>
-                                <td style="font-family: 'Courier New', monospace; color: ${h.delta >= 0 ? 'green' : 'red'};">
-                                    ${h.delta >= 0 ? '+' : ''}${(h.delta / 100).toLocaleString('en-US', {style:'currency', currency:'USD'})}
-                                </td>
-                                <td><span class="badge badge-low">${h.status}</span></td>
+                                <td>${h.id}</td>
+                                <td>${h.type}</td>
+                                <td style="color: ${h.delta >= 0 ? 'green' : 'red'};">${(h.delta / 100).toLocaleString('en-US', {style:'currency', currency:'USD'})}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-
-                <!-- Transaction Entry Modal -->
-                <div id="ledger-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 500px; background:white; border: 1px solid var(--border); padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); z-index: 1000;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">
-                        <h3 style="margin: 0; font-family: 'Georgia', serif;">TRANSACTION ENTRY</h3>
-                        <button onclick="document.getElementById('ledger-modal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-                    </div>
+                <div id="ledger-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; background:white; border: 1px solid var(--border); padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); z-index: 1000;">
                     <form onsubmit="SovereignOS.addTransaction(event)">
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px; font-size: 0.75rem; font-family: 'Courier New', monospace; color: #666;">TRANSACTION TYPE</label>
-                            <select name="type" required 
-                                style="display: block; width: 100%; padding: 12px; border: 1px solid var(--border); font-family: 'Courier New', monospace; font-size: 0.9rem;">
-                                <option value="REVENUE_REC">REVENUE RECOGNITION</option>
-                                <option value="EXPENSE_REC">EXPENSE RECORD</option>
-                                <option value="TRANSFER">INTER_LEDGER TRANSFER</option>
-                            </select>
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 5px; font-size: 0.75rem; font-family: 'Courier New', monospace; color: #666;">AMOUNT (USD)</label>
-                            <input name="delta" type="number" step="0.01" required 
-                                style="display: block; width: 100%; padding: 12px; border: 1px solid var(--border); font-family: 'Courier New', monospace; font-size: 0.9rem;">
-                        </div>
-                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                            <button type="button" onclick="document.getElementById('ledger-modal').style.display='none'" 
-                                style="padding: 12px 24px; background: #e0e0e0; border: none; cursor: pointer; font-family: 'Courier New', monospace;">CANCEL</button>
-                            <button type="submit" 
-                                style="padding: 12px 24px; background: var(--accent); color: white; border: none; cursor: pointer; font-family: 'Courier New', monospace;">RECORD TRANSACTION</button>
-                        </div>
+                        <h3>TRANSACTION ENTRY</h3>
+                        <select name="type" style="width:100%; margin-bottom:10px; padding:10px;">
+                            <option value="REVENUE_REC">REVENUE</option>
+                            <option value="EXPENSE_REC">EXPENSE</option>
+                        </select>
+                        <input name="delta" type="number" step="0.01" placeholder="Amount" required style="width:100%; margin-bottom:10px; padding:10px;">
+                        <button type="submit" class="btn-primary">RECORD</button>
+                        <button type="button" onclick="document.getElementById('ledger-modal').style.display='none'">CANCEL</button>
                     </form>
                 </div>
             </section>
@@ -514,6 +421,15 @@ calculateSCS() {
         return div.innerHTML;
     }
 };
+
+// Global Exposure
+window.setView = (v) => SovereignOS.setView(v);
+window.SovereignOS = SovereignOS;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    SovereignOS.init();
+});
 
 // Global Exposure for HTML Event Handlers
 window.setView = (v) => SovereignOS.setView(v);
