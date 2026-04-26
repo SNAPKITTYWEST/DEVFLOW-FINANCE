@@ -1,6 +1,6 @@
-// SOVEREIGN OS - BIFROST BRIDGE ENGINE (Phase 2)
+// SOVEREIGN OS - PHASE 3: INTELLIGENCE HUB & SCS
 // ============================================================================
-// Phase 2: Orchestration & Data Modeling with SCS Integration
+// Phase 3: Intelligence Hub & Sovereign Credit Scoring (Predictive Engine)
 // ============================================================================
 
 const SovereignOS = {
@@ -67,14 +67,14 @@ const SovereignOS = {
     // ============================================================================
     // SCS CALCULATION: Intelligence Hub Integration
     // ============================================================================
-    calculateSCS() {
-        const { intelligence } = this.state;
+calculateSCS() {
+        const { intelligence, ledger } = this.state;
         const lcr = intelligence.vaultValue / intelligence.pipelineValue;
         
-        const liquidityScore = Math.min(200, Math.floor(intelligence.canonicalBalance / 1000));
+        const liquidityScore = Math.min(200, Math.floor(ledger.canonicalBalance / 1000));
         const vaultScore = Math.min(200, Math.floor(intelligence.vaultValue / 5000));
         const velocityScore = Math.min(100, Math.floor(intelligence.dealVelocity * 10));
-        const lcrScore = Math.floor((lcr - 0.5) * 100) || 0);
+        const lcrScore = Math.floor((lcr - 0.5) * 100) || 0;
         
         const baseScore = 400;
         const scs = Math.min(850, Math.max(500, 
@@ -146,7 +146,11 @@ const SovereignOS = {
         const container = document.getElementById('view-container');
         const v = this.state.view;
 
-        if (v === 'crm') {
+        if (v === 'intelligence') {
+            this.renderIntelligence(container);
+        } else if (v === 'vault') {
+            this.renderVault(container);
+        } else if (v === 'crm') {
             this.renderCRM(container);
         } else if (v === 'ledger') {
             this.renderLedger(container);
@@ -180,6 +184,135 @@ const SovereignOS = {
                         <p class="balance-val" style="font-size: 1.5rem;">${lcr.toFixed(2)}x</p>
                     </div>
                 </div>
+            </section>
+        `;
+    },
+
+    renderIntelligence(container) {
+        const { scs, lcr } = this.calculateSCS();
+        const tier = this.getRiskTier(scs);
+        const { intelligence } = this.state;
+        
+        container.innerHTML = `
+            <section class="fade-in">
+                <h2 style="margin-bottom: 20px;">Intelligence Hub</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div class="metric-card">
+                        <div class="metric-label">SOVEREIGN CREDIT SCORE</div>
+                        <div class="metric-value">${scs}</div>
+                        <span class="badge badge-${tier.class}">${tier.label}</span>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">LIQUIDITY COVERAGE RATIO</div>
+                        <div class="metric-value">${lcr.toFixed(2)}x</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">DEAL VELOCITY</div>
+                        <div class="metric-value">${intelligence.dealVelocity}</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-bottom: 15px; font-family: 'Courier New', monospace;">SCS BREAKDOWN</h3>
+                <table class="data-grid">
+                    <thead>
+                        <tr>
+                            <th>COMPONENT</th>
+                            <th>VALUE</th>
+                            <th>WEIGHT</th>
+                            <th>CONTRIBUTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">LIQUIDITY</td>
+                            <td style="font-family: 'Courier New', monospace;">$${(this.state.ledger.canonicalBalance / 100).toLocaleString()}</td>
+                            <td style="font-family: 'Courier New', monospace;">MAX 200</td>
+                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.min(200, Math.floor(this.state.ledger.canonicalBalance / 1000))}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">VAULT VALUE</td>
+                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue / 100).toLocaleString()}</td>
+                            <td style="font-family: 'Courier New', monospace;">MAX 200</td>
+                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.min(200, Math.floor(intelligence.vaultValue / 5000))}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">VELOCITY</td>
+                            <td style="font-family: 'Courier New', monospace;">${intelligence.dealVelocity} deals/mo</td>
+                            <td style="font-family: 'Courier New', monospace;">MAX 100</td>
+                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.min(100, Math.floor(intelligence.dealVelocity * 10))}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">LCR RATIO</td>
+                            <td style="font-family: 'Courier New', monospace;">${lcr.toFixed(2)}x</td>
+                            <td style="font-family: 'Courier New', monospace;">DYNAMIC</td>
+                            <td style="font-family: 'Courier New', monospace; color: var(--accent);">+${Math.floor((lcr - 0.5) * 100) || 0}</td>
+                        </tr>
+                        <tr style="background: #f0f4f0;">
+                            <td style="font-family: 'Courier New', monospace; font-weight: bold;">BASE SCORE</td>
+                            <td></td>
+                            <td></td>
+                            <td style="font-family: 'Courier New', monospace; font-weight: bold;">+400</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        `;
+    },
+
+    renderVault(container) {
+        const { intelligence } = this.state;
+        
+        container.innerHTML = `
+            <section class="fade-in">
+                <h2 style="margin-bottom: 20px;">Trust Vault</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div class="metric-card">
+                        <div class="metric-label">TOTAL VAULT VALUE</div>
+                        <div class="metric-value">$${(intelligence.vaultValue / 100).toLocaleString()}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">PIPELINE VALUE</div>
+                        <div class="metric-value">$${(intelligence.pipelineValue / 100).toLocaleString()}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">COLLATERAL RATIO</div>
+                        <div class="metric-value">${(intelligence.vaultValue / intelligence.pipelineValue).toFixed(2)}x</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-bottom: 15px; font-family: 'Courier New', monospace;">VAULT SEGMENTS</h3>
+                <table class="data-grid">
+                    <thead>
+                        <tr>
+                            <th>SEGMENT ID</th>
+                            <th>TYPE</th>
+                            <th>VALUE</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">SEG-PRIMARY-001</td>
+                            <td style="font-family: 'Courier New', monospace;">PRIMARY ASSET</td>
+                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue * 0.6 / 100).toLocaleString()}</td>
+                            <td><span class="badge badge-low">SECURED</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">SEG-LIQUID-002</td>
+                            <td style="font-family: 'Courier New', monospace;">LIQUID RESERVE</td>
+                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue * 0.3 / 100).toLocaleString()}</td>
+                            <td><span class="badge badge-low">SECURED</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-family: 'Courier New', monospace;">SEG-PROTOCOL-003</td>
+                            <td style="font-family: 'Courier New', monospace;">PROTOCOL BUFFER</td>
+                            <td style="font-family: 'Courier New', monospace;">$${(intelligence.vaultValue * 0.1 / 100).toLocaleString()}</td>
+                            <td><span class="badge badge-medium">RESERVED</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </section>
         `;
     },
