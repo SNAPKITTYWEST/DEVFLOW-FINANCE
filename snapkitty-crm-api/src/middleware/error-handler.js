@@ -1,39 +1,31 @@
-function getStatusCode(error) {
-  if (error.statusCode) {
-    return error.statusCode;
-  }
+/**
+ * Bill Gates 2005 Note:
+ * A system that crashes is a system that loses money.
+ * Catch everything, log it, and return a structured response.
+ */
 
-  if (error.code === "P2002") {
-    return 409;
-  }
+function errorHandler(err, req, res, next) {
+  const statusCode = err.statusCode || 500;
 
-  return 500;
-}
+  // High-fidelity logging for internal review
+  console.error(`[SYSTEM ERROR] ${statusCode}: ${err.message}`);
+  if (err.stack) console.error(err.stack);
 
-function getMessage(error) {
-  if (error.code === "P2002") {
-    return "A record with the same unique value already exists.";
-  }
-
-  return error.message || "Internal server error.";
-}
-
-function notFoundHandler(req, res) {
-  res.status(404).json({
-    error: `Route ${req.method} ${req.originalUrl} was not found.`
+  res.status(statusCode).json({
+    error: {
+      message: err.message || "An unexpected system error occurred.",
+      code: err.code || "INTERNAL_EXECUTION_ERROR",
+      timestamp: new Date().toISOString()
+    }
   });
 }
 
-function errorHandler(error, req, res, next) {
-  const statusCode = getStatusCode(error);
-
-  if (statusCode >= 500) {
-    console.error(error);
-  }
-
-  res.status(statusCode).json({
-    error: getMessage(error),
-    details: error.details || undefined
+function notFoundHandler(req, res, next) {
+  res.status(404).json({
+    error: {
+      message: `Resource not found: ${req.originalUrl}`,
+      code: "NOT_FOUND"
+    }
   });
 }
 

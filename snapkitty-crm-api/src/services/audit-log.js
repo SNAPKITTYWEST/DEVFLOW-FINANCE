@@ -1,60 +1,34 @@
 const prisma = require("../models/prisma");
 
-function cleanText(value) {
-  return String(value ?? "").trim();
-}
-
-function normalizeActivityInput(activityInput) {
-  if (typeof activityInput === "string") {
-    return {
-      text: cleanText(activityInput),
-      category: "SYSTEM_EVENT",
-      metadata: null
-    };
+/**
+ * Bill Gates 2005 Perspective:
+ * If it isn't logged, it didn't happen. Trust is built on transparency.
+ */
+async function pushActivity({ text, category, metadata = {} }) {
+  try {
+    const activity = await prisma.activity.create({
+      data: {
+        text,
+        category,
+        metadata,
+      },
+    });
+    console.log(`[ACTIVITY LOGGED] ${category}: ${text}`);
+    return activity;
+  } catch (error) {
+    // In a mission-critical system, we log to stderr if the DB log fails.
+    console.error("!!! [CRITICAL] Failed to write to Activity Log:", error);
   }
-
-  const text = cleanText(activityInput?.text);
-
-  if (!text) {
-    throw new Error("Activity text is required.");
-  }
-
-  return {
-    text,
-    category: cleanText(activityInput?.category) || "SYSTEM_EVENT",
-    metadata: activityInput?.metadata || null
-  };
 }
 
-function formatActivityRecord(entry) {
-  return {
-    id: entry.id,
-    text: entry.text,
-    category: entry.category,
-    metadata: entry.metadata,
-    time: entry.createdAt.toISOString()
-  };
-}
-
-async function pushActivity(activityInput) {
-  const data = normalizeActivityInput(activityInput);
-
-  return prisma.activity.create({
-    data
-  });
-}
-
-async function listActivity(limit = 50) {
+async function getRecentActivity(limit = 50) {
   return prisma.activity.findMany({
+    orderBy: { createdAt: "desc" },
     take: limit,
-    orderBy: {
-      createdAt: "desc"
-    }
   });
 }
 
 module.exports = {
-  formatActivityRecord,
-  listActivity,
-  pushActivity
+  pushActivity,
+  getRecentActivity,
 };

@@ -1,28 +1,50 @@
 const auditLogService = require("../services/audit-log");
 
-function parseLimit(value) {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!Number.isFinite(parsed)) {
-    return 50;
-  }
-
-  return Math.min(Math.max(parsed, 1), 100);
-}
-
-async function listActivity(req, res, next) {
+/**
+ * Bill Gates 2005 Note:
+ * Observability is the difference between a tool and an OS.
+ * We are building the latter.
+ */
+async function getActivityStream(req, res, next) {
   try {
-    const limit = parseLimit(req.query.limit);
-    const activity = await auditLogService.listActivity(limit);
+    const limit = parseInt(req.query.limit) || 50;
+    const activities = await auditLogService.getRecentActivity(limit);
 
+    // We wrap this in a schema-versioned envelope.
+    // Forward compatibility is key to long-term dominance.
     res.json({
-      activity: activity.map(auditLogService.formatActivityRecord)
+      schemaVersion: "2.1.0",
+      events: activities.map(a => ({
+        id: a.id,
+        eventType: a.category,
+        text: a.text,
+        timestamp: a.createdAt,
+        metadata: a.metadata,
+        immutable: true
+      }))
     });
   } catch (error) {
     next(error);
   }
 }
 
+async function postManualEvent(req, res, next) {
+  try {
+    const { text, category, metadata } = req.body;
+    if (!text || !category) {
+      const err = new Error("Event 'text' and 'category' are required for manual injection.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const event = await auditLogService.pushActivity({ text, category, metadata });
+    res.status(201).json(event);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
-  listActivity
+  getActivityStream,
+  postManualEvent
 };

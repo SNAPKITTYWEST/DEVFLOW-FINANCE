@@ -1,5 +1,4 @@
 const prisma = require("../models/prisma");
-const { isUsingMockData, getMockContacts } = require("../models/prisma");
 const auditLogService = require("../services/audit-log");
 const qbService = require("../services/qb-service");
 
@@ -9,88 +8,18 @@ const CONTACT_STATUS = {
   customer: "Customer"
 };
 
-function createHttpError(statusCode, message, details) {
+function createHttpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
-
-  if (details) {
-    error.details = details;
-  }
-
   return error;
-}
-
-function cleanText(value) {
-  return String(value ?? "").trim();
-}
-
-function normalizeStatus(value) {
-  const normalized = CONTACT_STATUS[cleanText(value).toLowerCase()];
-
-  if (!normalized) {
-    throw createHttpError(400, "Contact status must be Lead, Qualified, or Customer.");
-  }
-
-  return normalized;
-}
-
-function normalizeContactInput(payload = {}) {
-  const name = cleanText(payload.name);
-  const company = cleanText(payload.company);
-  const email = cleanText(payload.email).toLowerCase();
-  const status = normalizeStatus(payload.status);
-
-  if (!name) {
-    throw createHttpError(400, "Contact name is required.");
-  }
-
-  if (!company) {
-    throw createHttpError(400, "Contact company is required.");
-  }
-
-  if (!email || !email.includes("@")) {
-    throw createHttpError(400, "A valid contact email is required.");
-  }
-
-  return {
-    name,
-    company,
-    email,
-    status
-  };
-}
-
-function formatContact(contact) {
-  return {
-    id: contact.id,
-    name: contact.name,
-    company: contact.company,
-    email: contact.email,
-    status: contact.status,
-    qbCustomerId: contact.qbCustomerId,
-    createdAt: contact.createdAt.toISOString(),
-    updatedAt: contact.updatedAt.toISOString()
-  };
 }
 
 async function listContacts(req, res, next) {
   try {
-    if (isUsingMockData()) {
-      return res.json({
-        mode: "MOCK",
-        contacts: getMockContacts()
-      });
-    }
-    
     const contacts = await prisma.contact.findMany({
-      orderBy: {
-        createdAt: "desc"
-      }
+      orderBy: { createdAt: "desc" }
     });
-
-    res.json({
-      contacts: contacts.map(formatContact)
-    });
+    res.json({ contacts });
   } catch (error) {
     next(error);
   }
@@ -98,70 +27,57 @@ async function listContacts(req, res, next) {
 
 async function createContact(req, res, next) {
   try {
-    const contactInput = normalizeContactInput(req.body);
+    const { name, company, email, status } = req.body;
+
+    if (!name || !company || !email) {
+      throw createHttpError(400, "Name, Company, and Email are mandatory for Sovereign Registration.");
+    }
+
+    // Bill Gates 2005 Note: Check for duplicates before committing.
+    // We don't want a fragmented address book.
+    const existing = await prisma.contact.findUnique({ where: { email } });
+    if (existing) {
+      throw createHttpError(409, "This entity is already registered in the Sovereign Ledger.");
+    }
+
     let contact = await prisma.contact.create({
-      data: contactInput
+      data: {
+        name,
+        company,
+        email,
+        status: CONTACT_STATUS[status?.toLowerCase()] || CONTACT_STATUS.lead
+      }
     });
 
-    let quickBooksCustomer = null;
-    let syncWarning = null;
-
+    // Bifrost Bridge: Attempt QuickBooks Sync
+    let qbSyncStatus = "off";
     try {
-      const createdCustomer = await qbService.createCustomer(contact);
-      quickBooksCustomer = qbService.extractCustomerSnapshot(createdCustomer);
-
-      if (quickBooksCustomer.id) {
+      const qbCustomer = await qbService.createCustomer(contact);
+      if (qbCustomer && qbCustomer.Id) {
         contact = await prisma.contact.update({
-          where: {
-            id: contact.id
-          },
-          data: {
-            qbCustomerId: quickBooksCustomer.id
-          }
+          where: { id: contact.id },
+          data: { qbCustomerId: qbCustomer.Id }
         });
+        qbSyncStatus = "synced";
       }
-    } catch (syncError) {
-      syncWarning = qbService.toSyncWarning(syncError);
+    } catch (err) {
+      qbSyncStatus = "failed";
+      console.error(">>> [BIFROST] QuickBooks Sync Failed:", err.message);
     }
 
     await auditLogService.pushActivity({
       category: "CONTACT_CREATED",
-      text: `Created contact ${contact.name} from ${contact.company}`,
-      metadata: {
-        contactId: contact.id,
-        qbCustomerId: contact.qbCustomerId || null
-      }
+      text: `Entity Registered: ${contact.name} (${contact.company})`,
+      metadata: { contactId: contact.id, qbSyncStatus }
     });
 
-    if (syncWarning) {
-      await auditLogService.pushActivity({
-        category: "SYNC_WARNING",
-        text: `Sync Warning: ${contact.name} was created locally, but QuickBooks sync failed.`,
-        metadata: {
-          contactId: contact.id,
-          warning: syncWarning
-        }
-      });
-    }
-
-    res.status(201).json({
-      contact: formatContact(contact),
-      sync: syncWarning
-        ? {
-            status: "warning",
-            warning: syncWarning
-          }
-        : {
-            status: "synced",
-            customer: quickBooksCustomer
-          }
-    });
+    res.status(201).json({ contact, qbSyncStatus });
   } catch (error) {
     next(error);
   }
 }
 
 module.exports = {
-  createContact,
-  listContacts
+  listContacts,
+  createContact
 };
