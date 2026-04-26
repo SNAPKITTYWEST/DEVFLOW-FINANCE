@@ -3,122 +3,577 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapKitty | DevFlow Finance | SAP ERP</title>
-    <link rel="stylesheet" href="styles.css">
-    <meta name="description" content="SnapKitty | DevFlow Finance - Sovereign SAP ERP">
-</head>
-<body>
-    <div id="app">
-        <!-- SAP Standard Sidebar Navigation -->
-        <nav class="sidebar">
-            <div class="logo">SNAPKITTY<br>ERP</div>
-            <div class="version">SAP BFC 2.2.0</div>
-            
-            <!-- SAP Menu Tree -->
-            <ul class="nav-links sap-menu">
-                <li class="menu-header">TERMINAL</li>
-                <li onclick="setView('dashboard')">Terminal</li>
-                
-                <li class="menu-header">FINANCIALS (FI)</li>
-                <li onclick="setView('fi')">FB01 - Post Document</li>
-                <li onclick="setView('fi')">FB50 - Park Doc</li>
-                <li onclick="setView('fi')">F-04 - Clear</li>
-                
-                <li class="menu-header">CONTROLLING (CO)</li>
-                <li onclick="setView('co')">KB11 - Actual Cost</li>
-                <li onclick="setView('co')">Cost Centers</li>
-                
-                <li class="menu-header">MATERIALS (MM)</li>
-                <li onclick="setView('mm')">ME21 - Create PO</li>
-                <li onclick="setView('mm')">MIGO - Goods</li>
-                
-                <li class="menu-header">SALES (SD)</li>
-                <li onclick="setView('sd')">VA01 - Sales Order</li>
-                <li onclick="setView('sd')">VF01 - Invoice</li>
-                
-                <li class="menu-header">INTELLIGENCE</li>
-                <li onclick="setView('intelligence')">Intelligence Hub</li>
-                <li onclick="setView('vault')">Trust Vault</li>
-            </ul>
-            
-            <div class="sidebar-status">
-                <div class="sync-indicator pulse"></div>
-                <span>BIFROST ACTIVE</span>
-            </div>
-        </nav>
-
-        <!-- Main Execution Content -->
-        <main id="main-content">
-            <header>
-                <h1 id="view-title">SAP ERP CONSOLE</h1>
-                <div class="status-bar">
-                    <span id="sync-status">ORACLE: SYNCED</span> |
-                    <span id="scs-score">SCS: <span id="scs-val">780</span></span>
-                </div>
-            </header>
-
-            <div id="view-container">
-                <!-- Content injected via render() -->
-            </div>
-        </main>
-    </div>
-    
-    <!-- AI Copilot Floating Input -->
-    <div class="ai-copilot">
-        <input type="text" id="ai-input" placeholder="Ask AI Copilot... (e.g., 'show balance')" autocomplete="off">
-        <div class="ai-icon">🤖</div>
-    </div>
-    
+    <title>SnapKitty Collective | Sovereign Wealth OS</title>
     <style>
-        .sap-menu .menu-header {
-            font-size: 0.65rem;
-            color: #c9a227;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            padding: 15px 12px 5px;
-            border-top: 1px solid #2c3e50;
-            margin-top: 10px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         
-        .ai-copilot {
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --sovereign-green: #0d6b50;
+            --sovereign-dark: #0a1f1a;
+            --gold-accent: #c9a227;
+            --gold-light: #e8d48c;
+            --glass-bg: rgba(13, 35, 26, 0.75);
+            --glass-border: rgba(201, 162, 39, 0.3);
+            --text-primary: #f4f7f9;
+            --text-muted: #9ca3af;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--sovereign-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .bg-grid {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(13, 107, 80, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(13, 107, 80, 0.08) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .bg-glow-1 {
+            background: var(--sovereign-green);
+            top: -200px;
+            right: -100px;
+            animation: float-1 12s ease-in-out infinite;
+        }
+
+        .bg-glow-2 {
+            background: var(--gold-accent);
+            bottom: -200px;
+            left: -100px;
+            animation: float-2 15s ease-in-out infinite;
+        }
+
+        @keyframes float-1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, 40px); }
+        }
+
+        @keyframes float-2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(40px, -30px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .logo-group {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: #1c222b;
-            padding: 10px 15px;
-            border-radius: 30px;
-            border: 1px solid #c9a227;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: 999;
+            gap: 1.5rem;
         }
-        
-        .ai-copilot input {
-            background: transparent;
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--sovereign-green), var(--gold-accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--sovereign-dark);
+        }
+
+        .brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .brand span {
+            color: var(--gold-accent);
+        }
+
+        nav.desktop-nav {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            nav.desktop-nav {
+                display: flex;
+                gap: 2rem;
+            }
+        }
+
+        nav.desktop-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+
+        nav.desktop-nav a:hover {
+            color: var(--gold-accent);
+        }
+
+        .hero {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(13, 107, 80, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: var(--gold-accent);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--gold-accent);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--gold-accent), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
             border: none;
-            color: white;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            width: 250px;
-            outline: none;
         }
-        
-        .ai-copilot input::placeholder {
-            color: #666;
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--sovereign-green), #0f8a68);
+            color: var(--text-primary);
+            box-shadow: 0 4px 20px rgba(13, 107, 80, 0.4);
         }
-        
-        .ai-icon {
-            font-size: 1.2rem;
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(13, 107, 80, 0.5);
         }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+
+        .btn-glass {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-glass:hover {
+            background: rgba(201, 162, 39, 0.1);
+            border-color: var(--gold-accent);
+        }
+
+        .features {
+            padding: 6rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--gold-accent);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(13, 107, 80, 0.2), rgba(201, 162, 39, 0.2));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .stats {
+            padding: 4rem 0;
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            margin: 4rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--gold-accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .terminal-preview {
+            padding: 6rem 0;
+        }
+
+        .terminal-window {
+            background: #0d1512;
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .terminal-header {
+            background: rgba(13, 107, 80, 0.2);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+
+        .terminal-body {
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            text-align: left;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .terminal-prompt {
+            color: var(--gold-accent);
+        }
+
+        .terminal-output {
+            color: var(--text-muted);
+        }
+
+        .terminal-success {
+            color: var(--sovereign-green);
+        }
+
+        footer {
+            padding: 4rem 0;
+            text-align: center;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 767px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--sovereign-dark);
+            z-index: 100;
+            padding: 2rem;
+        }
+
+        .mobile-nav.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .mobile-nav a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.25rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        @media (min-width: 768px) {
+            .hero h1 {
+                font-size: clamp(3rem, 6vw, 5rem);
+            }
         }
     </style>
-    
-    <script src="app.js"></script>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo-group">
+                <div class="logo">SK</div>
+                <div class="brand">SnapKitty <span>Collective</span></div>
+            </div>
+            <button class="mobile-menu-btn" onclick="document.querySelector('.mobile-nav').classList.toggle('active')">☰</button>
+            <nav class="desktop-nav">
+                <a href="#features">Platform</a>
+                <a href="#terminal">Terminal</a>
+                <a href="mailto:treasury@snapkitty.org">Contact</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div class="glass-card">
+                <div class="hero-badge">System Operational: Bifrost v2.2.0</div>
+                <h1>The Future of <span>Sovereign Wealth</span></h1>
+                <p>A federated financial operating system for the modern era. Deterministic ledger control. Real-time capital intelligence. Complete sovereignty.</p>
+                <div class="cta-group">
+                    <a href="app.html" class="btn btn-primary" style="background: #0070d2;">
+                        Login to CRM (S/4HANA Style)
+                    </a>
+                    <a href="#build-telemetry" class="btn btn-glass">
+                        View Live Build Status
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats" id="build-telemetry">
+            <div class="section-header">
+                <h2>Build Transparency</h2>
+                <p>Real-time telemetry from the Sovereign OS deployment pipeline.</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-value" style="font-size: 1.5rem; font-family: 'JetBrains Mono'; color: #107e3e;">STABLE</div>
+                    <div class="stat-label">Bifrost Core</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="font-size: 1.5rem; font-family: 'JetBrains Mono';">98%</div>
+                    <div class="stat-label">Test Coverage</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="font-size: 1.5rem; font-family: 'JetBrains Mono';">ACTIVE</div>
+                    <div class="stat-label">Entra ID Sync</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="terminal-preview" id="terminal">
+            <div class="section-header">
+                <h2>Bifrost Terminal</h2>
+                <p>Command-line interface for coordinated capital deployment.</p>
+            </div>
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="terminal-dot red"></div>
+                    <div class="terminal-dot yellow"></div>
+                    <div class="terminal-dot green"></div>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">root@sovereign:~</span>
+                        <span class="terminal-output">$ curl -X GET /api/ledger</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">{ "balance": 1245000, "currency": "USD", "status": "SYNCED" }</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">root@sovereign:~</span>
+                        <span class="terminal-output">$ ./bin/intelligence --scs</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-success">SCS: 780 (MINIMAL RISK) | LCR: 2.5x</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">root@sovereign:~</span>
+                        <span class="terminal-output">$ exit</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>© 2026 SnapKitty Collective. All rights reserved.</p>
+            <p style="margin-top: 0.5rem;">DevFlow Finance Core | Bifrost v2.2.0</p>
+        </footer>
+    </div>
+
+    <nav class="mobile-nav">
+        <a href="#features" onclick="document.querySelector('.mobile-nav').classList.remove('active')">Platform</a>
+        <a href="#terminal" onclick="document.querySelector('.mobile-nav').classList.remove('active')">Terminal</a>
+        <a href="mailto:treasury@snapkitty.org" onclick="document.querySelector('.mobile-nav').classList.remove('active')">Contact</a>
+        <a href="index.html" onclick="document.querySelector('.mobile-nav').classList.remove('active')">Enter Terminal →</a>
+    </nav>
 </body>
 </html>

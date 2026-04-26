@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- IDENTITY & CRM LAYER ---
 model Contact {
   id           String   @id @default(uuid())
   name         String
@@ -17,45 +18,65 @@ model Contact {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   deals        Deal[]
-
-  @@index([status])
 }
 
 model Deal {
   id          String   @id @default(uuid())
   title       String
   owner       String
-  valueCents  Int
+  valueCents  BigInt   // ASC 606 Precision
   stage       String
-  qbInvoiceId String?  @unique
   contactId   String?
-  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contact     Contact? @relation(fields: [contactId], references: [id])
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([stage])
-  @@index([contactId])
 }
 
-model Task {
-  id        String   @id @default(uuid())
-  title     String
-  owner     String
-  dueDate   DateTime
-  priority  String
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([completed, dueDate])
+// --- PROCUREMENT & ERP LAYER (Acumatica/SAP/Concur) ---
+model Vendor {
+  id             String   @id @default(uuid())
+  name           String
+  externalId     String?  @unique // SAP/Acumatica ID
+  category       String
+  riskScore      Int      @default(0) // From Intelligence Hub
+  purchaseOrders PurchaseOrder[]
+  createdAt      DateTime @default(now())
 }
 
+model PurchaseOrder {
+  id           String   @id @default(uuid())
+  poNumber     String   @unique
+  vendorId     String
+  vendor       Vendor   @relation(fields: [vendorId], references: [id])
+  totalCents   BigInt
+  status       String   // DRAFT, APPROVED, FULFILLED, VOID
+  costCenterId String?
+  externalSync Json?    // Metadata for Concur/SAP sync status
+  createdAt    DateTime @default(now())
+}
+
+model CostCenter {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g., "DEVOPS-01"
+  name        String
+  budgetCents BigInt
+  spentCents  BigInt   @default(0)
+}
+
+// --- INTELLIGENCE & AUDIT LAYER ---
 model Activity {
   id        String   @id @default(uuid())
   text      String
-  category  String
+  category  String   // PROCUREMENT, FINANCE, IDENTITY, SYSTEM
   metadata  Json?
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+model IntelligenceSnapshot {
+  id            String   @id @default(uuid())
+  scsScore      Int
+  liquidityRatio Float
+  burnRateCents BigInt
+  timestamp     DateTime @default(now())
 }

@@ -275,7 +275,7 @@ const SovereignOS = {
     },
 
     // ============================================================================
-    // BIFROST SYNC: Enterprise Financial Mesh Integration
+    // BIFROST SYNC: Unified Enterprise Execution Mesh
     // ============================================================================
     async syncWithBifrost() {
         const indicator = document.getElementById('sync-status');
@@ -284,20 +284,41 @@ const SovereignOS = {
         }
 
         try {
-            // 1. FI Sync - Bifrost Handshake
+            const correlationId = crypto.randomUUID();
+
+            // 1. Intelligence Hub - Business Pulse Analytics
+            const pulseResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/intelligence/pulse`, {
+                headers: { 'X-Correlation-ID': correlationId }
+            });
+            if (pulseResponse.ok) {
+                const pulse = await pulseResponse.json();
+                this.state.intelligence.scsScore = pulse.metrics.scsScore;
+                this.state.intelligence.vaultValue = parseInt(pulse.metrics.liquidityCents);
+                this.state.intelligence.pipelineValue = parseInt(pulse.metrics.pipelineValueCents);
+            }
+
+            // 2. MM Module - Procurement & Vendor Sync
+            const vendorResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/procurement/vendors`, {
+                headers: { 'X-Correlation-ID': correlationId }
+            });
+            if (vendorResponse.ok) {
+                this.state.mm.vendors = await vendorResponse.json();
+            }
+
+            // 3. FI Module - Ledger Handshake
             const syncResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/finance/bifrost/sync`, {
                 method: 'POST',
-                headers: { 'X-Correlation-ID': crypto.randomUUID() }
+                headers: { 'X-Correlation-ID': correlationId }
             });
-
             if (syncResponse.ok) {
                 const data = await syncResponse.json();
-                this.state.intelligence.scsScore = data.scs || 780;
                 this.state.fi.ledger.canonicalBalance = (data.vaultValue || 0);
             }
 
-            // 2. Activity Stream
-            const eventResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/activity`);
+            // 4. Activity Stream (Global Event Bus)
+            const eventResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/activity`, {
+                headers: { 'X-Correlation-ID': correlationId }
+            });
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
                 if (eventData.events) {
@@ -310,7 +331,7 @@ const SovereignOS = {
             this.render();
             
         } catch (error) {
-            console.warn(">>> [BIFROST] Connection Interrupted.", error.message);
+            console.warn(">>> [BIFROST] Enterprise Sync Interrupted.", error.message);
             if (indicator) indicator.innerHTML = '<span class="sync-indicator" style="background:#f87171;"></span>BIFROST: OFFLINE';
         }
     },
@@ -398,13 +419,87 @@ const SovereignOS = {
     },
 
     // ============================================================================
-    // NAVIGATION: View Controller
+    // NAVIGATION: S/4HANA Shell Controller
     // ============================================================================
     setView(view) {
+        console.log(`>>> [SHELL] Navigating to: ${view.toUpperCase()}`);
         this.state.view = view;
-        const titleEl = document.getElementById('view-title');
-        if (titleEl) titleEl.innerText = view.toUpperCase() + ' CONSOLE';
-        this.render();
+
+        const launchpad = document.getElementById('launchpad');
+        const viewContainer = document.getElementById('view-container');
+
+        if (view === 'dashboard' || view === 'terminal') {
+            if (launchpad) launchpad.style.display = 'grid';
+            if (viewContainer) viewContainer.style.display = 'none';
+        } else {
+            if (launchpad) launchpad.style.display = 'none';
+            if (viewContainer) {
+                viewContainer.style.display = 'block';
+                this.renderView(view);
+            }
+        }
+
+        this.saveState();
+    },
+
+    renderView(viewName) {
+        const container = document.getElementById('view-container');
+        const title = viewName.toUpperCase();
+
+        container.innerHTML = `
+            <div class="object-page fade-in">
+                <div class="object-header">
+                    <div style="margin-bottom:20px;">
+                        <button class="btn-primary" onclick="app.setView('dashboard')" style="background:var(--fiori-text-muted)">← Back to Launchpad</button>
+                    </div>
+                    <h1 class="object-title">${title} Module</h1>
+                    <p class="object-subtitle">Sovereign OS | S/4HANA Extension</p>
+                </div>
+                <div id="module-content">
+                    ${this.getModuleContent(viewName)}
+                </div>
+            </div>
+        `;
+    },
+
+    getModuleContent(viewName) {
+        // High-Density Data Grids for SAP Modules
+        if (viewName === 'fi') {
+            return `
+                <h3>General Ledger (FB01)</h3>
+                <table class="sap-table">
+                    <thead>
+                        <tr><th>Doc ID</th><th>Type</th><th>Amount</th><th>Posting Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        ${this.state.fi.documents.map(doc => `
+                            <tr>
+                                <td>${doc.id}</td>
+                                <td>${doc.type}</td>
+                                <td>$${(doc.amount/100).toLocaleString()}</td>
+                                <td>${doc.postingDate}</td>
+                                <td><span class="status-badge status-positive">${doc.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        if (viewName === 'intelligence') {
+            return `
+                <div class="metric-card">
+                    <div class="metric-label">Sovereign Credit Score (SCS)</div>
+                    <div class="metric-value" style="color:var(--fiori-success)">${this.state.intelligence.scsScore}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Liquidity Coverage Ratio (LCR)</div>
+                    <div class="metric-value">${this.state.intelligence.lcr}x</div>
+                </div>
+            `;
+        }
+
+        return `<p>Module ${viewName.toUpperCase()} is initializing...</p>`;
     },
 
     // ============================================================================
