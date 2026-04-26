@@ -1,4 +1,5 @@
 const prisma = require("../models/prisma");
+const { isUsingMockData, getMockContacts } = require("../models/prisma");
 const auditLogService = require("../services/audit-log");
 const qbService = require("../services/qb-service");
 
@@ -74,6 +75,13 @@ function formatContact(contact) {
 
 async function listContacts(req, res, next) {
   try {
+    if (isUsingMockData()) {
+      return res.json({
+        mode: "MOCK",
+        contacts: getMockContacts()
+      });
+    }
+    
     const contacts = await prisma.contact.findMany({
       orderBy: {
         createdAt: "desc"

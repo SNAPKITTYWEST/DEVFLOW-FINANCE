@@ -43,7 +43,8 @@ app.use(attachActivityLogger);
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    service: "snapkitty-crm-api",
+    service: "snapkitty-api",
+    mode: prisma.isUsingMockData ? "MOCK" : "LIVE",
     time: new Date().toISOString()
   });
 });
