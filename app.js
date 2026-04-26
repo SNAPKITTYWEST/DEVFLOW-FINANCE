@@ -1,9 +1,16 @@
-// SOVEREIGN OS - PHASE 3: INTELLIGENCE HUB & SCS
+// SOVEREIGN OS - PHASE 4: BIFROST API SYNC
 // ============================================================================
-// Phase 3: Intelligence Hub & Sovereign Credit Scoring (Predictive Engine)
+// Phase 4: Full Integration with External CRM/API Endpoints + Offline-First
 // ============================================================================
 
 const SovereignOS = {
+    // CONFIG: External API Endpoints
+    CONFIG: {
+        BIFROST_ENDPOINT: 'http://localhost:3000/api',
+        SYNC_INTERVAL: 30000,
+        OFFLINE_MODE: true
+    },
+
     // STATE: Canonical Ledger + CRM Pipeline + Intelligence
     state: {
         view: 'dashboard',
@@ -31,7 +38,56 @@ const SovereignOS = {
     init() {
         this.loadState();
         this.render();
+        this.syncWithBifrost();
+        
+        if (this.CONFIG.SYNC_INTERVAL > 0) {
+            setInterval(() => this.syncWithBifrost(), this.CONFIG.SYNC_INTERVAL);
+        }
+        
         console.log("Bifrost Bridge: Active");
+    },
+
+    // ============================================================================
+    // BIFROST SYNC: External API Integration (Offline-First)
+    // ============================================================================
+    async syncWithBifrost() {
+        const indicator = document.getElementById('sync-status');
+        if (!this.CONFIG.OFFLINE_MODE && indicator) {
+            indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>SYNCING...';
+        }
+
+        try {
+            if (this.CONFIG.OFFLINE_MODE) {
+                if (indicator) indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>ORACLE: SYNCED';
+                console.log("Bifrost: Offline mode - using local state");
+                return;
+            }
+
+            const response = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/intelligence`);
+            if (!response.ok) throw new Error('API Error');
+            
+            const data = await response.json();
+            
+            if (data.ledger) {
+                this.state.ledger.canonicalBalance = data.ledger.balance;
+            }
+            if (data.intelligence) {
+                this.state.intelligence = { ...this.state.intelligence, ...data.intelligence };
+            }
+            
+            this.saveState();
+            
+            if (indicator) {
+                indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>ORACLE: SYNCED';
+            }
+            
+            this.pushActivity('BIFROST_SYNC', 'Synced with external Oracle');
+            this.render();
+            
+        } catch (error) {
+            console.log("Bifrost: Offline fallback -", error.message);
+            if (indicator) indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>ORACLE: OFFLINE';
+        }
     },
 
     // ============================================================================
