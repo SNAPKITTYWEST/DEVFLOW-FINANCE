@@ -10,6 +10,7 @@ const { errorHandler, notFoundHandler } = require("./middleware/error-handler");
 const activityRoutes = require("./routes/activity");
 const contactRoutes = require("./routes/contacts");
 const financeRoutes = require("./routes/finance");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 

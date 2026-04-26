@@ -419,6 +419,32 @@ const SovereignOS = {
     },
 
     // ============================================================================
+    // AUTHENTICATION: Microsoft Entra ID
+    // ============================================================================
+    initLogin() {
+        console.log(">>> [AUTH] Initiating Microsoft Entra Login...");
+        // Redirect to the backend auth route
+        window.location.href = "http://localhost:3000/auth/login";
+    },
+
+    checkAuth() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const user = urlParams.get('user');
+        const status = urlParams.get('auth_status');
+
+        if (status === 'success' && token) {
+            console.log(`>>> [AUTH] Welcome, ${user}. Session Authenticated.`);
+            this.state.user = { name: user, token: token, isAuthenticated: true };
+            this.pushActivity(`User ${user} authenticated via Entra ID.`, 'IDENTITY_AUTH');
+            this.saveState();
+
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    },
+
+    // ============================================================================
     // NAVIGATION: S/4HANA Shell Controller
     // ============================================================================
     setView(view) {
