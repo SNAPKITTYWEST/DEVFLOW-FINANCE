@@ -35,6 +35,17 @@ const env = {
   openCollective: {
     apiKey: process.env.OC_API_KEY || "",
     slug: process.env.OC_COLLECTIVE_SLUG || ""
+  },
+  entra: {
+    clientId: process.env.ENTRA_CLIENT_ID || "",
+    clientSecret: process.env.ENTRA_CLIENT_SECRET || "",
+    tenantId: process.env.ENTRA_TENANT_ID || "common",
+    redirectUri: process.env.ENTRA_REDIRECT_URI || ""
+  },
+  plaid: {
+    clientId: process.env.PLAID_CLIENT_ID || "",
+    secret: process.env.PLAID_SECRET || "",
+    env: process.env.PLAID_ENV || "sandbox"
   }
 };
 

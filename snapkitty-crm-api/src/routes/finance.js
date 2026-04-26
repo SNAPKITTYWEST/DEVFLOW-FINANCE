@@ -1,24 +1,25 @@
 const express = require("express");
-
-const financeController = require("../controllers/finance-controller");
-const { isUsingMockData, getMockLedger, getMockIntelligence } = require("../models/prisma");
+const bankingController = require("../controllers/banking-controller");
 
 const router = express.Router();
 
-router.get("/auth", financeController.getAuthUrl);
-router.get("/callback", financeController.handleCallback);
-router.post("/invoice", financeController.createInvoice);
-router.post("/collective/sync", financeController.syncCollectiveBalance);
+/**
+ * Bill Gates 2005 Note:
+ * The finance routes are the most sensitive part of the system.
+ * We keep banking (Plaid) and local ledger logic strictly separated.
+ */
 
-router.get("/intelligence", (req, res) => {
-  if (isUsingMockData()) {
-    return res.json({
-      mode: "MOCK",
-      intelligence: getMockIntelligence(),
-      ledger: getMockLedger()
-    });
-  }
-  res.json({ mode: "LIVE" });
+// Plaid Banking Synapse
+router.get("/plaid/link-token", bankingController.getLinkToken);
+router.post("/plaid/exchange-token", bankingController.handlePublicTokenExchange);
+
+// Bifrost Multi-Entity Sync (Placeholder for expanded logic)
+router.post("/bifrost/sync", (req, res) => {
+  res.json({
+    status: "synced",
+    timestamp: new Date().toISOString(),
+    scs: 780
+  });
 });
 
 module.exports = router;
