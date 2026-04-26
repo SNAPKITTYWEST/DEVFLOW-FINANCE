@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapKitty | DevFlow Finance</title>
     <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="SnapKitty | DevFlow Finance - Sovereign Multi-Entity Wealth OS">
+    <meta name="scs-version" content="2.1.0">
 </head>
 <body>
     <div id="app">
         <!-- Sidebar Navigation -->
         <nav class="sidebar">
-            <div class="logo">SNAPKITTY COLLECTIVE</div>
+            <div class="logo">SNAPKITTY<br>COLLECTIVE</div>
+            <div class="version">BIFROST v2.1.0</div>
             <ul class="nav-links">
                 <li onclick="setView('dashboard')">Terminal</li>
                 <li onclick="setView('ledger')">Canonical Ledger</li>
@@ -24,7 +27,7 @@
                 <h1 id="view-title">Sovereign OS Terminal</h1>
                 <div class="status-bar">
                     <span id="sync-status">Bifrost: Synchronized</span> |
-                    <span id="scs-score">SCS: 780</span>
+                    <span id="scs-score">SCS: <span id="scs-val">780</span></span>
                 </div>
             </header>
 
