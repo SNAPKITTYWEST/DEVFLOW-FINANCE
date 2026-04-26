@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/README.md">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/README.md" />
+              <option name="updatedContent" value="# MyApplication&#10;&#10;An Android application built with Jetpack Compose and Kotlin.&#10;&#10;## Project Setup&#10;&#10;### Requirements&#10;- Android Studio&#10;- Gradle 8.0 or higher&#10;- Kotlin 2.2.10&#10;- AGP (Android Gradle Plugin) 9.1.0&#10;&#10;### Building&#10;&#10;To build the project:&#10;&#10;```bash&#10;./gradlew build&#10;```&#10;&#10;To run on a connected device or emulator:&#10;&#10;```bash&#10;./gradlew installDebug&#10;```&#10;&#10;## Dependencies&#10;&#10;This project uses:&#10;- Jetpack Compose for UI&#10;- Material 3 Design System&#10;- Kotlin Coroutines&#10;- AndroidX libraries&#10;&#10;## License&#10;&#10;This project is open source.&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
