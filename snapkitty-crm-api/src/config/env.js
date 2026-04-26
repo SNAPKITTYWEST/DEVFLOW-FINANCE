@@ -17,7 +17,7 @@ function parseList(value, fallbackValue) {
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: parseInteger(process.env.PORT, 5000),
-  clientOrigins: parseList(process.env.CLIENT_ORIGIN, "http://127.0.0.1:5500"),
+  clientOrigins: parseList(process.env.CLIENT_ORIGIN, "http://127.0.0.1:5500,http://localhost:5500,https://collectivekitty.com,https://www.collectivekitty.com"),
   databaseUrl: process.env.DATABASE_URL || "",
   jwtSecret: process.env.JWT_SECRET || "development-only-secret",
   redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",

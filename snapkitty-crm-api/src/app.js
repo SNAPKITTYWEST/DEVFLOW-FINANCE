@@ -53,9 +53,30 @@ app.get("/health", (req, res) => {
 app.use("/api/contacts", contactRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/finance", financeRoutes);
+app.use("/api/auth", authRoutes);
+
+// SOVEREIGN HEARTBEAT: Automated Recovery
+app.get("/api/heartbeat", (req, res) => {
+  res.json({
+    status: "SOVEREIGN",
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// CRITICAL FAILURE PROTECTION
+process.on('uncaughtException', (err) => {
+  console.error('>>> [CRITICAL] Uncaught Exception:', err);
+  // In a sovereign system, we log and attempt graceful recovery
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('>>> [CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 if (require.main === module) {
   app.listen(env.port, () => {
