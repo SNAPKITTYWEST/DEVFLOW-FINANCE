@@ -1,0 +1,108 @@
+:root {
+    --bg-primary: #f4f7f9;
+    --sidebar-bg: #1c222b;
+    --accent: #0d6b50; /* Sovereign Green */
+    --text-main: #2c3e50;
+    --border: #dcdfe6;
+}
+
+body {
+    margin: 0;
+    font-family: Georgia, serif; /* Authority font */
+    background: var(--bg-primary);
+    color: var(--text-main);
+}
+
+#app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: 100vh;
+}
+
+.sidebar {
+    background: var(--sidebar-bg);
+    color: white;
+    padding: 20px;
+}
+
+.logo {
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--accent);
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    margin-top: 40px;
+}
+
+.nav-links li {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #2c3e50;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.nav-links li:hover {
+    background: var(--accent);
+}
+
+header {
+    background: white;
+    padding: 10px 30px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-bar {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+#view-container {
+    padding: 30px;
+}
+
+/* Grid Table Styles */
+.data-grid {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-family: 'Courier New', monospace;
+    margin-top: 20px;
+}
+
+.data-grid th, .data-grid td {
+    border: 1px solid var(--border);
+    padding: 12px;
+    text-align: left;
+}
+
+.data-grid th {
+    background: #f8f9fa;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #909399;
+}
+
+.balance-card {
+    background: white;
+    padding: 20px;
+    border: 1px solid var(--border);
+    display: inline-block;
+    min-width: 300px;
+}
+
+.balance-val {
+    font-family: 'Courier New', monospace;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--accent);
+}

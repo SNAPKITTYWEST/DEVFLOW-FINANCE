@@ -1,28 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Collective Kitty</title>
-    <style>
-        body {
-            background-color: #fff0f5;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            color: #ff69b4;
-        }
-        h1 { font-size: 3em; }
-        p { font-size: 1.5em; }
-        .icon { font-size: 5em; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapKitty | DevFlow Finance</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="icon">🐾</div>
-    <h1>Collective Kitty</h1>
-    <p>Something super cute is coming soon!</p>
-    <p>Stay tuned, besties! ✨💖</p>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">SNAPKITTY COLLECTIVE</div>
+            <ul class="nav-links">
+                <li onclick="setView('dashboard')">Terminal</li>
+                <li onclick="setView('ledger')">Canonical Ledger</li>
+                <li onclick="setView('crm')">Sovereign CRM</li>
+            </ul>
+        </nav>
+
+        <!-- Main Execution Content -->
+        <main id="main-content">
+            <header>
+                <h1 id="view-title">Sovereign OS Terminal</h1>
+                <div class="status-bar">
+                    <span id="sync-status">Bifrost: Synchronized</span> |
+                    <span id="scs-score">SCS: 780</span>
+                </div>
+            </header>
+
+            <div id="view-container">
+                <!-- Content injected here via render() -->
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>
