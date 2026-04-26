@@ -1,4 +1,6 @@
-// SOVEREIGN OS - PHASE 4: BIFROST INTEGRATION
+// SOVEREIGN OS - SAP STANDARD ERP + AI COPILOT
+// ============================================================================
+// Steve Jobs UX: Fully integrated SAP ERP with AI Copilot
 // ============================================================================
 
 const SovereignOS = {
@@ -6,7 +8,233 @@ const SovereignOS = {
     CONFIG: {
         BIFROST_ENDPOINT: 'http://localhost:5000/api',
         SYNC_INTERVAL: 30000,
-        OFFLINE_MODE: false
+        OFFLINE_MODE: false,
+        AI_ENABLED: true
+    },
+
+    // STATE: SAP ERP Modules + AI Copilot
+    state: {
+        view: 'dashboard',
+        
+        // FI - Financial Accounting
+        fi: {
+            ledger: {
+                canonicalBalance: 124500000,
+                currency: 'USD',
+                history: []
+            },
+            documents: [],
+            parkedDocuments: []
+        },
+        
+        // CO - Controlling
+        co: {
+            costCenters: [
+                { id: 'CC-001', name: 'Operations', budget: 50000000, actual: 32500000 },
+                { id: 'CC-002', name: 'Marketing', budget: 15000000, actual: 8750000 },
+                { id: 'CC-003', name: 'R&D', budget: 25000000, actual: 18200000 }
+            ],
+            internalOrders: []
+        },
+        
+        // MM - Materials Management
+        mm: {
+            vendors: [
+                { id: 'V-001', name: 'AWS Services', paymentTerms: 'NET30', creditLimit: 100000000 },
+                { id: 'V-002', name: 'Google Cloud', paymentTerms: 'NET45', creditLimit: 75000000 }
+            ],
+            purchaseOrders: [],
+            goodsReceipts: []
+        },
+        
+        // SD - Sales Distribution
+        sd: {
+            customers: [],
+            salesOrders: [],
+            invoices: []
+        },
+        
+        // AI Copilot State
+        ai: {
+            enabled: true,
+            context: [],
+            lastQuery: null
+        },
+        
+        // CRM - Legacy Entity Management
+        contacts: [
+            { id: '1', name: 'SnapKitty DIF', email: 'treasury@snapkitty.org', status: 'Active' },
+            { id: '2', name: 'Open Collective Oracle', email: 'sync@opencollective.com', status: 'Synchronized' }
+        ],
+        
+        // Intelligence
+        intelligence: {
+            scsScore: 780,
+            lcr: 2.5,
+            vaultValue: 250000000,
+            pipelineValue: 100000000,
+            dealVelocity: 5,
+            sentiment: 'STABLE',
+            riskLevel: 'low'
+        }
+    },
+
+    // SAP Transaction Code Registry
+    TX_CODES: {
+        // FI Transaction Codes
+        FB01: 'Post Document',
+        FB02: 'Change Document',
+        FB03: 'Display Document',
+        FB50: 'Park Document',
+        FBV1: 'Parked Document',
+        F-04: 'Post with clearing',
+        F-51: 'Recurring entry',
+        
+        // CO Transaction Codes
+        KB11: 'Actual Cost',
+        KB31: 'Revenue',
+        KOB1: 'CO Line Item',
+        
+        // MM Transaction Codes
+        ME21: 'Create PO',
+        ME22: 'Change PO',
+        ME23: 'Display PO',
+        MIGO: 'Goods Movement',
+        MB1A: 'Goods Issue',
+        MB1B: 'Goods Receipt',
+        
+        // SD Transaction Codes
+        VA01: 'Create Sales Order',
+        VA02: 'Change Sales Order',
+        VA03: 'Display Sales Order',
+        VF01: 'Create Invoice',
+        VL01: 'Create Delivery'
+    },
+
+    async init() {
+        this.loadState();
+        this.render();
+        
+        // Initialize AI Copilot
+        if (this.CONFIG.AI_ENABLED) {
+            this.initCopilot();
+        }
+        
+        await this.syncWithBifrost();
+        
+        if (this.CONFIG.SYNC_INTERVAL > 0) {
+            setInterval(() => this.syncWithBifrost(), this.CONFIG.SYNC_INTERVAL);
+        }
+        
+        console.log("Sovereign OS SAP: Active");
+    },
+
+    // ============================================================================
+    // AI COPILOT: Natural Language Processing
+    // ============================================================================
+    initCopilot() {
+        const input = document.getElementById('ai-input');
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && input.value) {
+                    this.processAIQuery(input.value);
+                    input.value = '';
+                }
+            });
+        }
+    },
+
+    async processAIQuery(query) {
+        const normalized = query.toLowerCase().trim();
+        
+        // Add to context
+        this.state.ai.context.push({ role: 'user', text: query, timestamp: new Date().toISOString() });
+        
+        let response = '';
+        
+        // FI Commands
+        if (normalized.includes('balance') || normalized.includes('ledger')) {
+            const bal = (this.state.fi.ledger.canonicalBalance / 100).toLocaleString('en-US', {style:'currency', currency:'USD'});
+            response = `Current Canonical Ledger Balance: ${bal}`;
+        }
+        else if (normalized.includes('post fb01') || normalized.includes('post document')) {
+            response = 'Opening FB01 - Post Document. Use the Ledger modal.';
+        }
+        else if (normalized.includes('park') || normalized.includes('fb50')) {
+            response = 'Opening FB50 - Park Document for approval workflow.';
+        }
+        
+        // CO Commands
+        else if (normalized.includes('budget') || normalized.includes('cost center')) {
+            const cc = this.state.co.costCenters[0];
+            response = `Cost Center ${cc.id}: ${cc.name} - Budget: $${(cc.budget/100).toLocaleString()} | Actual: $${(cc.actual/100).toLocaleString()}`;
+        }
+        else if (normalized.includes('actual') || normalized.includes('kb11')) {
+            response = 'Opening KB11 - Actual Cost Entry.';
+        }
+        
+        // MM Commands
+        else if (normalized.includes('po') || normalized.includes('purchase order')) {
+            response = `Vendors: ${this.state.mm.vendors.map(v => v.name).join(', ')}. Use ME21 to create PO.`;
+        }
+        else if (normalized.includes('goods') || normalized.includes('migo')) {
+            response = 'Opening MIGO - Goods Movement.';
+        }
+        
+        // SD Commands
+        else if (normalized.includes('sales order') || normalized.includes('va01')) {
+            response = 'Opening VA01 - Create Sales Order.';
+        }
+        else if (normalized.includes('invoice') || normalized.includes('vf01')) {
+            response = 'Opening VF01 - Create Invoice.';
+        }
+        
+        // Intelligence Queries
+        else if (normalized.includes('scs') || normalized.includes('credit score')) {
+            const { scs } = this.calculateSCS();
+            const tier = this.getRiskTier(scs);
+            response = `Sovereign Credit Score: ${scs} (${tier.label})`;
+        }
+        else if (normalized.includes('lcr')) {
+            const { lcr } = this.calculateSCS();
+            response = `Liquidity Coverage Ratio: ${lcr.toFixed(2)}x`;
+        }
+        
+        // Help
+        else if (normalized.includes('help') || normalized.includes('what can')) {
+            response = 'AI Copilot: Ask about [balance, post FB01, park FB50, budget, cost center, PO, goods MIGO, sales order VA01, invoice VF01, SCS, LCR]';
+        }
+        
+        // Default
+        else {
+            response = `Processing: "${query}". Try "AI help" for available commands.`;
+        }
+        
+        this.state.ai.context.push({ role: 'assistant', text: response, timestamp: new Date().toISOString() });
+        this.state.ai.lastQuery = query;
+        
+        this.showAINotification(response);
+        this.render();
+    },
+
+    showAINotification(message) {
+        const existing = document.getElementById('ai-response');
+        if (existing) existing.remove();
+        
+        const notif = document.createElement('div');
+        notif.id = 'ai-response';
+        notif.style.cssText = `
+            position: fixed; bottom: 80px; right: 20px; 
+            background: #0d6b50; color: white; padding: 15px 20px; 
+            border-radius: 8px; max-width: 350px;
+            font-family: 'Courier New', monospace; font-size: 0.85rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 1000;
+            animation: slideIn 0.3s ease;
+        `;
+        notif.textContent = '🤖 ' + message;
+        document.body.appendChild(notif);
+        
+        setTimeout(() => notif.remove(), 8000);
     },
 
     // STATE: Canonical Ledger + CRM Pipeline + Intelligence
@@ -47,47 +275,43 @@ const SovereignOS = {
     },
 
     // ============================================================================
-    // BIFROST SYNC: External API Integration (Offline-First)
+    // BIFROST SYNC: Enterprise Financial Mesh Integration
     // ============================================================================
     async syncWithBifrost() {
         const indicator = document.getElementById('sync-status');
         if (indicator) {
-            indicator.innerHTML = '<span class="pulse" style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin-right:5px;"></span>SYNCING...';
+            indicator.innerHTML = '<span class="pulse sync-indicator"></span>SYNCING...';
         }
 
         try {
-            // 1. Sync Ledger & SCS
-            const syncResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/finance/bifrost/sync`, { method: 'POST' });
+            // 1. FI Sync - Bifrost Handshake
+            const syncResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/finance/bifrost/sync`, {
+                method: 'POST',
+                headers: { 'X-Correlation-ID': crypto.randomUUID() }
+            });
+
             if (syncResponse.ok) {
                 const data = await syncResponse.json();
-                this.state.intelligence.scsScore = data.sovereignCreditScore;
-                this.state.ledger.canonicalBalance = data.totalLiquid * 100;
+                this.state.intelligence.scsScore = data.scs || 780;
+                this.state.fi.ledger.canonicalBalance = (data.vaultValue || 0);
             }
 
-            // 2. Sync Risk Pulse
-            const riskResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/oracle/risk-pulse`);
-            if (riskResponse.ok) {
-                const risk = await riskResponse.json();
-                this.state.intelligence.sentiment = risk.sentiment;
-                this.state.intelligence.riskLevel = risk.riskLevel;
-            }
-
-            // 3. Sync Activity Log
-            const eventResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/ledger/events`);
+            // 2. Activity Stream
+            const eventResponse = await fetch(`${this.CONFIG.BIFROST_ENDPOINT}/activity`);
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
                 if (eventData.events) {
-                    this.state.activity = eventData.events;
+                    this.state.fi.ledger.history = eventData.events;
                 }
             }
 
             this.saveState();
-            if (indicator) indicator.innerHTML = 'ORACLE: SYNCED';
+            if (indicator) indicator.innerHTML = '<span class="sync-indicator"></span>BIFROST: STABLE';
             this.render();
             
         } catch (error) {
-            console.warn("Bifrost: Operating in Offline Mode", error.message);
-            if (indicator) indicator.innerHTML = 'ORACLE: OFFLINE';
+            console.warn(">>> [BIFROST] Connection Interrupted.", error.message);
+            if (indicator) indicator.innerHTML = '<span class="sync-indicator" style="background:#f87171;"></span>BIFROST: OFFLINE';
         }
     },
 
@@ -104,6 +328,29 @@ const SovereignOS = {
 
     saveState() {
         localStorage.setItem('sovereign_state', JSON.stringify(this.state));
+    },
+
+    // ============================================================================
+    // SCS CALCULATION
+    // ============================================================================
+    calculateSCS() {
+        const { intelligence, fi } = this.state;
+        const lcr = intelligence.vaultValue / (intelligence.pipelineValue || 1);
+        
+        const liquidityScore = Math.min(200, Math.floor(fi.ledger.canonicalBalance / 1000));
+        const vaultScore = Math.min(200, Math.floor(intelligence.vaultValue / 5000));
+        const velocityScore = Math.min(100, Math.floor(intelligence.dealVelocity * 10));
+        const lcrScore = Math.floor((lcr - 0.5) * 100) || 0;
+        
+        const baseScore = 400;
+        const localScs = Math.min(850, Math.max(500,
+            baseScore + liquidityScore + vaultScore + velocityScore + lcrScore
+        ));
+        
+        return {
+            scs: intelligence.scsScore || localScs,
+            lcr: lcr
+        };
     },
 
     pushActivity(eventType, text) {
@@ -158,6 +405,127 @@ const SovereignOS = {
         const titleEl = document.getElementById('view-title');
         if (titleEl) titleEl.innerText = view.toUpperCase() + ' CONSOLE';
         this.render();
+    },
+
+    // ============================================================================
+    // SAP FI: Document Posting (FB01)
+    // ============================================================================
+    postDocument(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        
+        const doc = {
+            id: 'DOC-' + Date.now(),
+            txCode: 'FB01',
+            type: formData.get('docType'),
+            amount: parseInt(formData.get('amount') || '0') * 100,
+            text: formData.get('text'),
+            postingDate: new Date().toISOString().split('T')[0],
+            status: 'Posted'
+        };
+        
+        this.state.fi.documents.unshift(doc);
+        this.state.fi.ledger.canonicalBalance += doc.amount;
+        
+        // Add to ledger history
+        this.state.fi.ledger.history.unshift({
+            id: doc.id,
+            type: doc.type,
+            delta: doc.amount,
+            status: 'Finalized'
+        });
+        
+        this.saveState();
+        document.getElementById('fi-modal').style.display = 'none';
+        this.setView('fi');
+    },
+
+    // ============================================================================
+    // SAP FI: Document Parking (FB50)
+    // ============================================================================
+    parkDocument(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        
+        const doc = {
+            id: 'PARK-' + Date.now(),
+            txCode: 'FB50',
+            type: formData.get('docType'),
+            amount: parseInt(formData.get('amount') || '0') * 100,
+            text: formData.get('text'),
+            postingDate: formData.get('postingDate') || new Date().toISOString().split('T')[0],
+            status: 'Parked'
+        };
+        
+        this.state.fi.parkedDocuments.unshift(doc);
+        
+        this.saveState();
+        document.getElementById('fi-modal').style.display = 'none';
+        this.showAINotification(`Document ${doc.id} parked for approval.`);
+        this.setView('fi');
+    },
+
+    // ============================================================================
+    // CO: Cost Center Entry
+    // ============================================================================
+    addCostCenter(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        
+        const cc = {
+            id: 'CC-' + (this.state.co.costCenters.length + 1).toString().padStart(3, '0'),
+            name: formData.get('name'),
+            budget: parseInt(formData.get('budget') || '0') * 100,
+            actual: 0
+        };
+        
+        this.state.co.costCenters.unshift(cc);
+        this.saveState();
+        this.setView('co');
+    },
+
+    // ============================================================================
+    // MM: PO Creation (ME21)
+    // ============================================================================
+    createPurchaseOrder(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        
+        const po = {
+            id: 'PO-' + Date.now(),
+            txCode: 'ME21',
+            vendor: formData.get('vendor'),
+            material: formData.get('material'),
+            quantity: parseInt(formData.get('quantity') || '0'),
+            netValue: parseInt(formData.get('value') || '0') * 100,
+            status: 'Created'
+        };
+        
+        this.state.mm.purchaseOrders.unshift(po);
+        this.saveState();
+        this.setView('mm');
+    },
+
+    // ============================================================================
+    // SD: Sales Order (VA01)
+    // ============================================================================
+    createSalesOrder(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        
+        const so = {
+            id: 'SO-' + Date.now(),
+            txCode: 'VA01',
+            customer: formData.get('customer'),
+            material: formData.get('material'),
+            quantity: parseInt(formData.get('quantity') || '0'),
+            netValue: parseInt(formData.get('value') || '0') * 100,
+            status: 'Created'
+        };
+        
+        this.state.sd.salesOrders.unshift(so);
+        this.saveState();
+        this.setView('sd');
     },
 
     // ============================================================================

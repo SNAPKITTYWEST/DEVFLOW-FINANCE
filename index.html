@@ -3,23 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapKitty | DevFlow Finance</title>
+    <title>SnapKitty | DevFlow Finance | SAP ERP</title>
     <link rel="stylesheet" href="styles.css">
-    <meta name="description" content="SnapKitty | DevFlow Finance - Sovereign Multi-Entity Wealth OS">
+    <meta name="description" content="SnapKitty | DevFlow Finance - Sovereign SAP ERP">
 </head>
 <body>
     <div id="app">
-        <!-- Sidebar Navigation -->
+        <!-- SAP Standard Sidebar Navigation -->
         <nav class="sidebar">
-            <div class="logo">SNAPKITTY<br>COLLECTIVE</div>
-            <div class="version">BIFROST v2.2.0</div>
-            <ul class="nav-links">
+            <div class="logo">SNAPKITTY<br>ERP</div>
+            <div class="version">SAP BFC 2.2.0</div>
+            
+            <!-- SAP Menu Tree -->
+            <ul class="nav-links sap-menu">
+                <li class="menu-header">TERMINAL</li>
                 <li onclick="setView('dashboard')">Terminal</li>
-                <li onclick="setView('crm')">Sovereign CRM</li>
-                <li onclick="setView('ledger')">Canonical Ledger</li>
+                
+                <li class="menu-header">FINANCIALS (FI)</li>
+                <li onclick="setView('fi')">FB01 - Post Document</li>
+                <li onclick="setView('fi')">FB50 - Park Doc</li>
+                <li onclick="setView('fi')">F-04 - Clear</li>
+                
+                <li class="menu-header">CONTROLLING (CO)</li>
+                <li onclick="setView('co')">KB11 - Actual Cost</li>
+                <li onclick="setView('co')">Cost Centers</li>
+                
+                <li class="menu-header">MATERIALS (MM)</li>
+                <li onclick="setView('mm')">ME21 - Create PO</li>
+                <li onclick="setView('mm')">MIGO - Goods</li>
+                
+                <li class="menu-header">SALES (SD)</li>
+                <li onclick="setView('sd')">VA01 - Sales Order</li>
+                <li onclick="setView('sd')">VF01 - Invoice</li>
+                
+                <li class="menu-header">INTELLIGENCE</li>
                 <li onclick="setView('intelligence')">Intelligence Hub</li>
                 <li onclick="setView('vault')">Trust Vault</li>
             </ul>
+            
             <div class="sidebar-status">
                 <div class="sync-indicator pulse"></div>
                 <span>BIFROST ACTIVE</span>
@@ -29,7 +50,7 @@
         <!-- Main Execution Content -->
         <main id="main-content">
             <header>
-                <h1 id="view-title">Sovereign OS Terminal</h1>
+                <h1 id="view-title">SAP ERP CONSOLE</h1>
                 <div class="status-bar">
                     <span id="sync-status">ORACLE: SYNCED</span> |
                     <span id="scs-score">SCS: <span id="scs-val">780</span></span>
@@ -37,10 +58,67 @@
             </header>
 
             <div id="view-container">
-                <!-- Content injected here via render() -->
+                <!-- Content injected via render() -->
             </div>
         </main>
     </div>
+    
+    <!-- AI Copilot Floating Input -->
+    <div class="ai-copilot">
+        <input type="text" id="ai-input" placeholder="Ask AI Copilot... (e.g., 'show balance')" autocomplete="off">
+        <div class="ai-icon">🤖</div>
+    </div>
+    
+    <style>
+        .sap-menu .menu-header {
+            font-size: 0.65rem;
+            color: #c9a227;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 15px 12px 5px;
+            border-top: 1px solid #2c3e50;
+            margin-top: 10px;
+        }
+        
+        .ai-copilot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1c222b;
+            padding: 10px 15px;
+            border-radius: 30px;
+            border: 1px solid #c9a227;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+        
+        .ai-copilot input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            width: 250px;
+            outline: none;
+        }
+        
+        .ai-copilot input::placeholder {
+            color: #666;
+        }
+        
+        .ai-icon {
+            font-size: 1.2rem;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+    
     <script src="app.js"></script>
 </body>
 </html>
