@@ -1,10 +1,15 @@
-# SnapKitty Collective | Sovereign OS (v2.2.0)
+# SnapKitty Collective | Sovereign OS (v2.2.1)
 
 <p align="center">
   <img src="app/logo.svg" width="200" alt="SnapKitty Collective Logo">
 </p>
 
+**BUILD VERSION: v2.2.1-DEPLOYED** *(Force Deploy)*
+
 **Sovereign OS** is a federated financial execution engine built for the SnapKitty Collective. It replaces fragmented ERP systems with a deterministic, "Bifrost" powered core that unifies capital flow, materials management (MM), and real-time intelligence.
+
+## 🚀 LIVE URL
+**https://collectivekitty.com**
 
 ## 🌌 The Bifrost Architecture
 The system operates on a decoupled "Bifrost" bridge philosophy:
@@ -16,44 +21,33 @@ The system operates on a decoupled "Bifrost" bridge philosophy:
 ## 🛠 Project Build Status & Telemetry
 | Component | Status | Infrastructure |
 | :--- | :--- | :--- |
-| **Landing Page** | [ACTIVE] | collectivekitty.com |
-| **Sovereign CRM** | [STABLE] | /index.html |
-| **SAP Terminal** | [STABLE] | /app.html |
-| **Bifrost API** | [ACTIVE] | snapkitty-crm-api (Node.js) |
+| **Landing Page** | [ACTIVE] | https://collectivekitty.com |
+| **SAP Terminal** | [STABLE] | /index.html |
+| **CRM** | [STABLE] | /app.html |
+| **Bifrost API** | [ACTIVE] | snapkitty-crm-api |
 | **Entra Auth** | [ACTIVE] | GoDaddy M365 OIDC |
 
 ## 🔧 Fix 404 Errors
 If experiencing 404 at `collectivekitty.com`:
 
 1. **GitHub Pages Settings → Source**: Select `Branch: main` and `Folder: /(root)`
-2. **CNAME**: Verified (`collectivekitty.com` in file)
-3. **DNS Propagation**: Wait up to 24 hours or verify A records in GoDaddy
-4. **Required A Records**:
+2. **CNAME**: Verified (`collectivekitty.com`)
+3. **Hard Refresh**: CTRL+SHIFT+R or clear browser cache
+4. **Required A Records** (GoDaddy):
    - `@` → 185.199.108.153
    - `@` → 185.199.109.153
    - `@` → 185.199.110.153
    - `@` → 185.199.111.153
-5. **CNAME www**: → SNAPKITTYWEST.github.io |
+5. **CNAME www**: → SNAPKITTYWEST.github.io
 
-## 🚀 Deployment Intelligence (Infrastructure Heartbeat)
-If `collectivekitty.com` is redirecting to GoDaddy, it is a **DNS propagation** or **A-Record** issue. 
-
-**Required DNS Fixes (GoDaddy Console):**
-1. **A Record (@)**: Must point to your deployment IP (e.g., 76.76.21.21 for Vercel).
-2. **CNAME (www)**: Points to your deployment domain.
-3. **M365 Conflict**: GoDaddy often resets DNS records when M365/Entra is activated. **Manually re-add the A records** if they were deleted by the M365 wizard.
-
-## ⚖️ Core Philosophy: Systems over Software
-If a system cannot be reliably repeated, it cannot be trusted. Sovereign OS replaces:
-- **Ad-hoc Scripting** → Deterministic T-Codes (FB01, ME21)
-- **Subjective Reporting** → Real-time Sovereign Credit Score (SCS)
-- **Fragmented Tools** → Unified "Bifrost" Execution Mesh
-
-## 📂 System Hierarchy
-- `/app.html` — The SAP-style "Enterprise Cockpit" application.
-- `/index.html` — The "Sovereign Wealth" marketing gateway.
-- `/snapkitty-crm-api/` — The Node.js "Bifrost" core (Prisma/Express).
-- `/styles.css` — High-density Fiori Horizon enterprise theme.
+## 📂 System Files
+- `/index.html` — Main landing/terminal page
+- `/app.html` — CRM application
+- `/app.js` — Sovereign OS JavaScript
+- `/styles.css` — Enterprise theme
+- `/snapkitty-crm-api/` — Node.js Bifrost API
+- `/collectivekitty/` — Next.js frontend
 
 ---
+
 **"Software is the most important tool we have. We're building it to be beautiful, deterministic, and sovereign."** — *SnapKitty Collective*
