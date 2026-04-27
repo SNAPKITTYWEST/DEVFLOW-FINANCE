@@ -235,6 +235,130 @@ model FinancialTransaction {
 }
 
 // ============================================================================
+// PLAID BANK LINKS
+// ============================================================================
+
+model BankLink {
+  id          String   @id @default(cuid())
+  userId      String
+  orgId       String
+  itemId      String   // Plaid item ID
+  accessToken String   // Encrypted
+  status     String   @default("pending")
+  cursor     String?  // Plaid cursor for sync
+  lastSyncAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  transactions BankTransaction[]
+
+  @@index([userId])
+  @@index([orgId])
+}
+
+model BankTransaction {
+  id            String   @id @default(cuid())
+  bankLinkId    String
+  bankLink     BankLink @relation(fields: [bankLinkId], references: [id])
+  transactionId String   @unique
+  amount       Float
+  date         DateTime
+  name         String
+  merchantName String?
+  category     String?
+  pending     Boolean  @default(false)
+  currency    String   @default("USD")
+  matchedAt    DateTime?
+  matchedTo    String?
+  createdAt    DateTime @default(now())
+
+  @@index([bankLinkId])
+  @@index([date])
+}
+
+// ============================================================================
+// COMPLIANCE / KYC
+// ============================================================================
+
+model KycRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  orgId        String
+  status      String   // pending, review, approved, rejected
+  score       Int
+  riskLevel   String   // low, medium, high
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  address     String
+  city        String
+  state       String
+  postalCode  String
+  documentId  String?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ============================================================================
+// VIRTUAL ACCOUNTS & CARDS
+// ============================================================================
+
+model VirtualAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  orgId         String
+  unitAccountId String   @unique
+  type          String   // individual, business
+  status       String   @default("pending")
+  createdAt     DateTime @default(now())
+  cards        VirtualCard[]
+}
+
+model VirtualCard {
+  id            String   @id @default(cuid())
+  accountId    String
+  account      VirtualAccount @relation(fields: [accountId], references: [id])
+  userId        String
+  orgId        String
+  unitCardId   String   @unique
+  lastFour     String?
+  expiryMonth  Int?
+  expiryYear   Int?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  transactions CardTransaction[]
+
+  @@index([accountId])
+}
+
+model CardTransaction {
+  id                 String   @id @default(cuid())
+  card               VirtualCard @relation(fields: [cardId], references: [id])
+  cardId             String
+  unitTransactionId String   @unique
+  amount             Float
+  type               String
+  status             String
+  direction          String   // credit, debit
+  createdAt          DateTime @default(now())
+}
+
+// ============================================================================
+// RECONCILIATION
+// ============================================================================
+
+model ReconciliationRun {
+  id              String   @id @default(cuid())
+  runId           String   @unique
+  orgId           String
+  matchedCount    Int      @default(0)
+  exceptionCount Int      @default(0)
+  status         String   @default("running")
+  completedAt    DateTime @default(now())
+}
+
+// ============================================================================
 // SPRINT 5: FINTECH BaaS (Banking & Cards)
 // ============================================================================
 
