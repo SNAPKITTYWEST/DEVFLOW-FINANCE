@@ -1,0 +1,9 @@
+[build]
+  command = "cd collectivekitty && npm run build"
+  publish = "collectivekitty/.next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
