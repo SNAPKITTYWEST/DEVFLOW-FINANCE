@@ -1,52 +1,78 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSovereignContext } from '@/lib/auth-guard';
+import { authMiddleware, createEvent, successResponse, errorResponse } from '@/lib/authMiddleware';
+
+export const dynamic = 'force-dynamic';
 
 /**
- * PROCUREMENT REQUISITION HANDLER
- * Implements Sovereign Approval Hierarchy.
+ * PROCUREMENT REQUISITIONS - Sprint 2
+ * GET /api/procurement/requisitions → list
+ * POST /api/procurement/requisitions → create PR
  */
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
+  const auth = await authMiddleware(request);
+  if (auth instanceof NextResponse) return auth;
+  
   try {
-    const ctx = await getSovereignContext();
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    
+    const where: any = {};
+    if (status) where.status = status;
+    
+    const requisitions = await prisma.purchaseRequisition.findMany({
+      where,
+      include: { items: true, requester: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return successResponse(requisitions);
+  } catch (error) {
+    return errorResponse('Failed to fetch requisitions: ' + error.message);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await authMiddleware(request);
+  if (auth instanceof NextResponse) return auth;
+  
+  try {
     const body = await request.json();
-    const cost = parseFloat(body.estimatedCost);
-
-    // DETERMINISTIC APPROVAL LOGIC
-    let status = 'submitted';
-    let approvalNeededBy = 'manager'; // Default
-
-    if (cost < 1000) {
-      status = 'approved'; // Auto-approved
-      approvalNeededBy = 'system';
-    } else if (cost > 10000) {
-      approvalNeededBy = 'finance_director';
+    
+    if (!body.items || body.items.length === 0) {
+      return errorResponse('Requisition must have at least one item', 400);
     }
-
-    const pr = await prisma.purchaseRequisition.create({
+    
+    // Create requisition with items
+    const requisition = await prisma.purchaseRequisition.create({
       data: {
-        orgId: body.orgId,
-        requestedById: ctx.azureOid,
-        projectId: body.projectId,
         title: body.title,
         description: body.description,
-        estimatedCost: cost,
-        status: status,
-        priority: body.priority || 'normal'
-      }
+        totalAmount: body.totalAmount,
+        status: 'pending',
+        requesterId: auth.user.sub,
+        items: {
+          create: body.items.map((item: any) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.quantity * item.unitPrice,
+            category: item.category
+          }))
+        }
+      },
+      include: { items: true }
     });
-
-    // LOG TO IMMUTABLE AUDIT TRAIL
-    await prisma.event.create({
-      data: {
-        type: 'FINANCIAL',
-        payload: { action: 'PR_CREATED', prId: pr.id, status: status }
-      }
+    
+    await createEvent('REQUISITION_CREATED', {
+      requisitionId: requisition.id,
+      title: requisition.title,
+      totalAmount: requisition.totalAmount
     });
-
-    return NextResponse.json(pr);
+    
+    return successResponse(requisition);
   } catch (error) {
-    return NextResponse.json({ error: "PROCUREMENT_WRITE_FAILED" }, { status: 500 });
+    return errorResponse('Failed to create requisition: ' + error.message);
   }
 }

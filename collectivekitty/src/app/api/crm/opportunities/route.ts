@@ -1,66 +1,75 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSovereignContext } from '@/lib/auth-guard';
+import { authMiddleware, createEvent, successResponse, errorResponse } from '@/lib/authMiddleware';
+
+export const dynamic = 'force-dynamic';
 
 /**
- * CRM OPPORTUNITY HANDLER
- * The deterministic write path for the $1.7B pipeline.
+ * CRM OPPORTUNITIES - Sprint 1
+ * GET /api/crm/opportunities → list with stage filter
+ * POST /api/crm/opportunities → insert to DB, return record
+ * PATCH /api/crm/opportunities/:id → update stage
  */
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // 1. Auth check
+  const auth = await authMiddleware(request);
+  if (auth instanceof NextResponse) return auth;
+  
   try {
-    const ctx = await getSovereignContext();
-    const opps = await prisma.opportunity.findMany({
-      where: { ownerId: ctx.azureOid },
+    const { searchParams } = new URL(request.url);
+    const stage = searchParams.get('stage');
+    const ownerId = searchParams.get('ownerId');
+    
+    const where: any = {};
+    if (stage) where.stage = stage;
+    if (ownerId) where.ownerId = ownerId;
+    
+    const opportunities = await prisma.opportunity.findMany({
+      where,
       include: { company: true },
       orderBy: { createdAt: 'desc' }
     });
-    return NextResponse.json(opps);
+    
+    return successResponse(opportunities);
   } catch (error) {
-    console.error("GET_OPPS_ERROR:", error);
-    return NextResponse.json({ error: "UNAUTHORIZED_OR_DB_FAIL" }, { status: 401 });
+    return errorResponse('Failed to fetch opportunities: ' + error.message);
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // 1. Auth check
+  const auth = await authMiddleware(request);
+  if (auth instanceof NextResponse) return auth;
+  
   try {
-    const ctx = await getSovereignContext();
     const body = await request.json();
-
-    // Ensure organization exists or get it from context
-    // For MVP, we assume orgId is provided or we find the user's primary org
-    const user = await prisma.user.findUnique({
-      where: { azureOid: ctx.azureOid }
-    });
-
-    if (!user) {
-        return NextResponse.json({ error: "USER_NOT_PROVISIONED" }, { status: 403 });
+    
+    // Validate required fields
+    if (!body.name || !body.value) {
+      return errorResponse('Missing required fields: name, value', 400);
     }
-
+    
+    // Create opportunity
     const opportunity = await prisma.opportunity.create({
       data: {
         name: body.name,
-        value: parseFloat(body.value),
-        currency: body.currency || "USD",
+        value: body.value,
         stage: body.stage || 'prospecting',
         companyId: body.companyId,
-        ownerId: user.id,
+        ownerId: auth.user.sub
       }
     });
-
-    // LOG EVENT TO IMMUTABLE LEDGER
-    await prisma.event.create({
-      data: {
-        type: 'CRM_SYNC',
-        payload: { action: 'OPPORTUNITY_CREATED', oppId: opportunity.oppId },
-        userId: user.id,
-        oppId: opportunity.oppId
-      }
+    
+    // Log event (every write: createEvent after DB insert)
+    await createEvent('OPPORTUNITY_CREATED', {
+      opportunityId: opportunity.id,
+      name: opportunity.name,
+      value: opportunity.value
     });
-
-    return NextResponse.json(opportunity);
+    
+    return successResponse(opportunity);
   } catch (error) {
-    console.error("POST_OPP_ERROR:", error);
-    return NextResponse.json({ error: "WRITE_FAILED" }, { status: 500 });
+    return errorResponse('Failed to create opportunity: ' + error.message);
   }
 }

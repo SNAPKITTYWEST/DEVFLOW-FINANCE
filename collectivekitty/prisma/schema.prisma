@@ -1,0 +1,183 @@
+// SnapKitty Collective | Prisma Schema v2.2.0
+// Sprint 1-4: CRUD + Procurement + Real-time + Finance
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// SPRINT 1: CRM OPPORTUNITIES
+// ============================================================================
+
+model User {
+  id          String   @id @default(cuid())
+  azureOid    String   @unique
+  email       String   @unique
+  name        String?
+  role        String   @default("user")
+  createdAt   DateTime @default(now())
+  opportunities Opportunity[]
+  purchaseRequisitions PurchaseRequisition[]
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  companyId    String   @unique
+  name        String
+  domain      String?
+  industry    String?
+  createdAt   DateTime @default(now())
+  opportunities Opportunity[]
+}
+
+model Opportunity {
+  id          String   @id @default(cuid())
+  oppId       String   @unique
+  name        String
+  value       Float
+  stage       String   @default("prospecting")
+  companyId   String
+  company    Company  @relation(fields: [companyId], references: [id])
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([stage])
+}
+
+// ============================================================================
+// SPRINT 2: PROCUREMENT
+// ============================================================================
+
+model Vendor {
+  id          String   @id @default(cuid())
+  externalId  String   @unique
+  name        String
+  category    String
+  riskScore   Int      @default(0)
+  createdAt   DateTime @default(now())
+  purchaseOrders PurchaseOrder[]
+  purchaseRequisitions PurchaseRequisition[]
+  vendorInvoices VendorInvoice[]
+}
+
+model PurchaseRequisition {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  totalAmount  Float
+  status      String   @default("pending") // pending, pending_director, approved, rejected, ordered
+  requesterId  String
+  requester   User     @relation(fields: [requesterId], references: [id])
+  approverId  String?
+  approverNotes String?
+  approvedAt DateTime?
+  createdAt  DateTime @default(now())
+  items       PurchaseRequisitionItem[]
+  orders      PurchaseOrder[]
+
+  @@index([status])
+  @@index([requesterId])
+}
+
+model PurchaseRequisitionItem {
+  id            String   @id @default(cuid())
+  description   String
+  quantity     Int
+  unitPrice    Float
+  totalPrice  Float
+  category    String?
+  requisitionId String
+  requisition PurchaseRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+}
+
+model PurchaseOrder {
+  id            String   @id @default(cuid())
+  requisitionId String?
+  requisition PurchaseRequisition? @relation(fields: [requisitionId], references: [id])
+  vendorId    String
+  vendor     Vendor  @relation(fields: [vendorId], references: [id])
+  title      String
+  totalAmount Float
+  status     String   @default("pending") // pending, ordered, received, paid
+  notes      String?
+  createdById String
+  createdAt  DateTime @default(now())
+
+  @@index([vendorId])
+  @@index([status])
+}
+
+// ============================================================================
+// SPRINT 3: EVENTS (Real-time)
+// ============================================================================
+
+model Event {
+  id        String   @id @default(cuid())
+  type      String
+  payload   Json?
+  timestamp DateTime @default(now())
+
+  @@index([type])
+  @@index([timestamp])
+}
+
+// ============================================================================
+// SPRINT 4: FINANCE (3-way match)
+// ============================================================================
+
+model VendorInvoice {
+  id              String   @id @default(cuid())
+  orgId           String
+  vendorId        String
+  vendor         Vendor  @relation(fields: [vendorId], references: [id])
+  poId            String?
+  po              PurchaseOrder? @relation(fields: [poId], references: [id])
+  invoiceNumber  String
+  invoiceDate    DateTime
+  dueDate        DateTime
+  amount        Float
+  currency      String   @default("USD")
+  status        String   @default("pending")
+  matchStatus   String?
+  paidAt        DateTime?
+  stripePaymentId String?
+  createdAt    DateTime @default(now())
+
+  @@index([orgId, status])
+  @@index([vendorId])
+}
+
+model GeneralLedger {
+  id            String   @id @default(cuid())
+  orgId         String
+  entryDate    DateTime
+  description String
+  debitAccount String
+  creditAccount String
+  amount      Float
+  currency    String   @default("USD")
+  sourceType  String
+  sourceId    String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([orgId, entryDate])
+  @@index([sourceType, sourceId])
+}
+
+model ChartOfAccounts {
+  code     String @id
+  orgId    String
+  name     String
+  type     String
+  parentCode String?
+  isActive Boolean @default(true)
+}
