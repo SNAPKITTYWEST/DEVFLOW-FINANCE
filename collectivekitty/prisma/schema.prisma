@@ -20,6 +20,8 @@ model User {
   email       String   @unique
   name        String?
   role        String   @default("user")
+  orgId       String?
+  organization Organization? @relation(fields: [orgId], references: [id])
   createdAt   DateTime @default(now())
   opportunities Opportunity[]
   purchaseRequisitions PurchaseRequisition[]
@@ -30,7 +32,10 @@ model Company {
   companyId    String   @unique
   name        String
   domain      String?
-  industry    String?
+  industry   String?
+  stripeCustomerId String?
+  subscriptionStatus String?
+  subscriptionId    String?
   createdAt   DateTime @default(now())
   opportunities Opportunity[]
 }
@@ -180,4 +185,157 @@ model ChartOfAccounts {
   type     String
   parentCode String?
   isActive Boolean @default(true)
+}
+
+// ============================================================================
+// FIN TECH (Stripe)
+// ============================================================================
+
+model Organization {
+  id                    String   @id @default(cuid())
+  name                  String
+  stripeAccountId       String?
+  stripeConnectStatus   Json?
+  stripeChargesEnabled Boolean?
+  stripePayoutsEnabled  Boolean?
+  createdAt             DateTime @default(now())
+  users                User[]
+  opportunities        Opportunity[]
+  generalLedger        GeneralLedger[]
+  vendorInvoices       VendorInvoice[]
+}
+
+model PaymentLink {
+  id        String   @id @default(cuid())
+  linkId    String   @unique
+  invoiceId String
+  url       String
+  amount    Float
+  currency  String   @default("USD")
+  status    String   @default("active")
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+model FinancialTransaction {
+  id          String   @id @default(cuid())
+  type        String   // PAYOUT, TRANSFER, REFUND
+  amount      Float
+  currency    String   @default("USD")
+  status      String   @default("pending")
+  vendorId    String?
+  invoiceId   String?
+  externalId  String?  // Stripe payment/transfer ID
+  metadata    Json?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([externalId])
+  @@index([type])
+}
+
+// ============================================================================
+// SPRINT 5: FINTECH BaaS (Banking & Cards)
+// ============================================================================
+
+model FinancialAccount {
+  id                String          @id @default(cuid())
+  orgId             String
+  accountName       String
+  accountType       String          // "operating" | "reserve" | "payroll" | "tax" | "escrow"
+  currency          String          @default("USD")
+  provider          String          // "unit" | "stripe" | "plaid_linked" | "manual"
+  providerAccountId String?         // external ID from provider
+  unitAccountId     String?         // Unit.co account ID
+  plaidAccountId    String?         // Plaid item/account ID
+  routingNumber     String?
+  accountNumber     String?         // encrypted at rest
+  currentBalance    Float           @default(0)
+  availableBalance  Float           @default(0)
+  lastSyncedAt      DateTime?
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  transactions      FinancialTransaction[]
+}
+
+model FinancialTransaction {
+  id                String          @id @default(cuid())
+  orgId             String
+  accountId         String
+  account           FinancialAccount @relation(fields: [accountId], references: [id])
+  externalId        String?         @unique  // provider transaction ID
+  provider          String          // "stripe" | "plaid" | "unit" | "dwolla"
+  type              String          // "credit" | "debit"
+  amount            Float           // always positive
+  currency          String          @default("USD")
+  description       String
+  category          String?         // auto-categorized
+  glCode            String?
+  status            String          // "pending" | "posted" | "failed" | "cancelled"
+  sourceType        String?         // "invoice" | "po" | "payroll" | "expense" | "transfer"
+  sourceId          String?         // ID of originating record in our system
+  metadata          Json?           // raw provider payload
+  postedAt          DateTime?
+  createdAt         DateTime        @default(now())
+  reconciliationId  String?
+  @@index([orgId, accountId, createdAt])
+  @@index([externalId])
+  @@index([sourceType, sourceId])
+}
+
+model LedgerEntry {
+  id                String          @id @default(cuid())
+  orgId             String
+  entryNumber       String          @unique  // LE-{YEAR}-{SEQUENCE}
+  entryDate         DateTime
+  description       String
+  status            String          @default("posted")  // posted only — immutable
+  hash              String          // SHA-256 of entry data — tamper detection
+  lines             LedgerLine[]
+  createdAt         DateTime        @default(now())
+  @@index([orgId, entryDate])
+}
+
+model LedgerLine {
+  id                String       @id @default(cuid())
+  entryId           String
+  entry             LedgerEntry  @relation(fields: [entryId], references: [id])
+  accountCode       String
+  debit             Float        @default(0)
+  credit            Float        @default(0)
+  description       String?
+  transactionId     String?
+  @@index([accountCode])
+}
+
+model VirtualCard {
+  id                String       @id @default(cuid())
+  orgId             String
+  userId            String       // card holder
+  unitCardId        String       @unique
+  last4             String
+  expiryMonth       Int
+  expiryYear        Int
+  status            String       @default("active")  // active | frozen | terminated
+  spendLimit        Float?
+  spendInterval     String?      // "daily" | "weekly" | "monthly" | "total"
+  spentToDate       Float        @default(0)
+  category          String?      // restrict to category
+  createdAt         DateTime     @default(now())
+  transactions      CardTransaction[]
+}
+
+model CardTransaction {
+  id                String      @id @default(cuid())
+  cardId            String
+  card              VirtualCard @relation(fields: [cardId], references: [id])
+  unitTransactionId String      @unique
+  merchant          String
+  merchantCategory  String?
+  amount            Float
+  currency          String      @default("USD")
+  status            String      // "pending" | "complete" | "declined"
+  glCode            String?
+  receiptUrl        String?
+  createdAt         DateTime    @default(now())
 }

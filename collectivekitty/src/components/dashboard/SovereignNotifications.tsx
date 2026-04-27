@@ -11,25 +11,58 @@ export function SovereignNotifications({ orgId }: { orgId: string }) {
     const lastEvent = events[0];
     if (!lastEvent) return;
 
-    // PROCUREMENT ALERTS
+    // FINTECH EVENTS
     if (lastEvent.type === 'FINANCIAL') {
-      const { action, prId, status } = lastEvent.payload;
+      const { action, amount, currency, client, vendor, merchant, prId } = lastEvent.payload;
+      const formattedAmount = `${currency || 'USD'} ${amount?.toLocaleString()}`;
 
-      if (action === 'PR_APPROVED') {
-        toast.success(`Purchase Requisition Approved`, {
-          description: `PR-${prId.substring(0, 8)} has been cleared for PO issuance.`,
-          action: {
-            label: 'View PO',
-            onClick: () => console.log('Navigate to PO')
-          }
-        });
+      switch (action) {
+        case 'payment_received':
+          toast.success(`Payment Received`, { description: `Received ${formattedAmount} from ${client}` });
+          break;
+        case 'payment_sent':
+          toast.info(`Payment Sent`, { description: `Sent ${formattedAmount} to ${vendor}` });
+          break;
+        case 'card_transaction':
+          toast(`Card Transaction`, { description: `Spent ${formattedAmount} at ${merchant}` });
+          break;
+        case 'bank_sync_complete':
+          toast.success(`Bank Synced`, { description: `${lastEvent.payload.count} new transactions imported.` });
+          break;
+        case 'ach_settled':
+          toast.success(`ACH Settled`, { description: `Payment to ${vendor} has settled.` });
+          break;
+        case 'reconciliation_done':
+          toast.success(`Month-end Close Complete`, { description: `Ledger reconciled for period.` });
+          break;
+        case 'PR_APPROVED':
+          toast.success(`Purchase Requisition Approved`, {
+            description: `PR-${prId.substring(0, 8)} cleared.`,
+          });
+          break;
+        case 'PR_REJECTED':
+          toast.error(`Purchase Requisition Rejected`, {
+            description: `PR-${prId.substring(0, 8)} declined. Reason: ${lastEvent.payload.reason || 'Policy mismatch'}`
+          });
+          break;
       }
+    }
 
-      if (action === 'PR_REJECTED') {
-        toast.error(`Purchase Requisition Rejected`, {
-          description: `PR-${prId.substring(0, 8)} was declined. Reason: ${lastEvent.payload.reason || 'Policy mismatch'}`
-        });
-      }
+    if (lastEvent.type === 'KYC' && lastEvent.payload.action === 'kyc_approved') {
+      toast.success('Identity Verified', { description: 'Payments unlocked.' });
+    }
+
+    if (lastEvent.type === 'FRAUD' || lastEvent.payload.action === 'fraud_alert') {
+      toast.error('FRAUD ALERT', {
+        description: lastEvent.payload.message || 'Transaction flagged for review.',
+        duration: Infinity
+      });
+    }
+
+    if (lastEvent.type === 'ALERT' && lastEvent.payload.action === 'balance_low') {
+      toast.warning('Low Balance Warning', {
+        description: `${lastEvent.payload.accountName} is below the threshold.`
+      });
     }
 
     // CONTRACT EXPIRATION
