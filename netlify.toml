@@ -1,5 +1,5 @@
 [build]
-  command = "cd collectivekitty && npm run build"
+  command = "command = "npm run build"
   publish = "collectivekitty/.next"
 
 [build.environment]
