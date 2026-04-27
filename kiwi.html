@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIWI — ERP Command System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #111114;
+  --bg-tertiary: #1a1a1f;
+  --bg-elevated: #222228;
+  --bg-hover: #2a2a32;
+  --border: #2a2a35;
+  --border-light: #333340;
+  --text-primary: #e8e8ec;
+  --text-secondary: #9a9aa8;
+  --text-muted: #6b6b7b;
+  --text-dim: #4a4a58;
+  --accent-crm: #3b82f6;
+  --accent-erp: #14b8a6;
+  --accent-proc: #f59e0b;
+  --accent-fin: #f97316;
+  --green: #22c55e;
+  --red: #ef4444;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.app-shell { display: flex; height: 100vh; width: 100vw; }
+
+.sidebar {
+  width: 64px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.sidebar .logo {
+  width: 36px; height: 36px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700; font-size: 14px;
+  margin-bottom: 24px;
+  cursor: pointer;
+}
+
+.nav-item {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  color: var(--text-muted);
+}
+
+.nav-item:hover { background: var(--bg-elevated); color: var(--text-secondary); }
+.nav-item.active { background: var(--bg-elevated); color: var(--text-primary); }
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px;
+  background: var(--accent-crm);
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-item[data-page="erp"] { color: var(--accent-erp); }
+.nav-item[data-page="procurement"] { color: var(--accent-proc); }
+.nav-item[data-page="finance"] { color: var(--accent-fin); }
+
+.nav-icon { width: 20px; height: 20px; }
+
+.nav-badge {
+  position: absolute;
+  top: 6px; right: 6px;
+  min-width: 16px; height: 16px;
+  background: var(--red);
+  color: white;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+}
+
+.main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  height: 56px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+
+.breadcrumb {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb span { color: var(--text-muted); font-weight: 400; }
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  min-width: 280px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 100%;
+}
+
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-light); }
+
+.btn-primary { background: var(--accent-crm); color: white; border-color: var(--accent-crm); }
+.btn-teal { background: var(--accent-erp); color: white; border-color: var(--accent-erp); }
+.btn-teal:hover { background: #0d9488; }
+.btn-amber { background: var(--accent-proc); color: #1a1a1a; border-color: var(--accent-proc); font-weight: 600; }
+.btn-coral { background: var(--accent-fin); color: white; border-color: var(--accent-fin); }
+
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-crm);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 12px;
+  color: white;
+  cursor: pointer;
+  border: 2px solid var(--bg-secondary);
+}
+
+.page { display: none; flex: 1; overflow: auto; padding: 20px 24px; }
+.page.active { display: block; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.kpi-tile {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.kpi-tile:hover { border-color: var(--border-light); transform: translateY(-1px); }
+
+.kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.kpi-value { font-size: 28px; font-weight: 700; font-family: var(--font-mono); }
+.kpi-value.crm { color: var(--accent-crm); }
+.kpi-value.erp { color: var(--accent-erp); }
+.kpi-value.proc { color: var(--accent-proc); }
+.kpi-value.fin { color: var(--accent-fin); }
+
+.kpi-trend { font-size: 11px; margin-top: 6px; font-family: var(--font-mono); }
+.kpi-trend.up { color: var(--green); }
+.kpi-trend.down { color: var(--red); }
+
+.data-table {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.data-table th {
+  background: var(--bg-tertiary);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg-tertiary); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status-badge.open { background: rgba(59,130,246,0.15); color: var(--accent-crm); }
+.status-badge.won { background: rgba(34,197,94,0.15); color: var(--green); }
+.status-badge.pending { background: rgba(245,158,11,0.15); color: var(--accent-proc); }
+.status-badge.approved { background: rgba(20,184,166,0.15); color: var(--accent-erp); }
+
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+
+.kanban-column {
+  flex: 0 0 280px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 200px);
+}
+
+.kanban-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kanban-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.kanban-count { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+.kanban-cards { flex: 1; overflow-y: auto; padding: 12px; }
+
+.kanban-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+
+.kanban-card:hover { border-color: var(--border-light); transform: translateY(-1px); }
+.kanban-card:active { cursor: grabbing; }
+
+.card-title { font-weight: 500; margin-bottom: 6px; }
+.card-value { font-size: 14px; font-weight: 700; color: var(--accent-crm); font-family: var(--font-mono); }
+.card-company { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.loading-spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent-crm);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar">
+    <div class="logo" onclick="setPage('crm')">K</div>
+    <div class="nav-item active" data-page="crm" onclick="setPage('crm')" title="CRM Pipeline">
+      <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4-4h12v10H7V5zm2 2v6h8V7H9zm2 8H7v-2h4v2zm0-4H7v-2h4v2z"/></svg>
+    </div>
+    <div class="nav-item" data-page="erp" onclick="setPage('erp')" title="ERP">
+      <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
+    </div>
+    <div class="nav-item" data-page="procurement" onclick="setPage('procurement')" title="Procurement">
+      <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+    </div>
+    <div class="nav-item" data-page="finance" onclick="setPage('finance')" title="Finance">
+      <svg class="nav-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.75-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.15c-1.13.56-2 1.83-2 3.25 0 1.79 1.12 2.7 2.91 3.12 1.99.47 3.09 1.53 3.09 3.73 0 1.64-1.26 2.85-3.03 2.85-1.77 0-2.76-.82-2.94-2h-2.2c.17 1.68 1.64 2.85 3.33 3.28V21h3v-2.11c1.21-.5 2.21-1.49 2.21-2.93 0-1.83-1.31-2.73-2.79-3.15-1.38-.4-3.09-.82-3.09-2.73z"/></svg>
+    </div>
+  </nav>
+  
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb">
+          <span id="page-title">CRM</span> Pipeline
+        </div>
+        <div class="search-box">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" placeholder="Search opportunities, contacts, deals... (⌘K)">
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="createOpp()">+ New Opportunity</button>
+        <div class="avatar">JD</div>
+      </div>
+    </header>
+    
+    <!-- CRM PAGE -->
+    <div class="page active" id="page-crm">
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <div class="kpi-label">Pipeline Value</div>
+          <div class="kpi-value crm">$2.4M</div>
+          <div class="kpi-trend up">↑ 12% this month</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Active Deals</div>
+          <div class="kpi-value erp">47</div>
+          <div class="kpi-trend up">↑ 3 this week</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Win Rate</div>
+          <div class="kpi-value proc">34%</div>
+          <div class="kpi-trend down">↓ 2% this quarter</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Avg. Deal Size</div>
+          <div class="kpi-value fin">$51K</div>
+          <div class="kpi-trend up">↑ 8% this month</div>
+        </div>
+      </div>
+      
+      <div class="kanban-board">
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <span class="kanban-title">Prospecting</span>
+            <span class="kanban-count">12</span>
+          </div>
+          <div class="kanban-cards" id="col-prospecting">
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">Acme Corp Enterprise</div>
+              <div class="card-value">$125,000</div>
+              <div class="card-company">Tech / SaaS</div>
+            </div>
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">GlobalTech Systems</div>
+              <div class="card-value">$89,000</div>
+              <div class="card-company">Enterprise</div>
+            </div>
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">DataStream Inc</div>
+              <div class="card-value">$67,000</div>
+              <div class="card-company">Data Platform</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <span class="kanban-title">Qualification</span>
+            <span class="kanban-count">8</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">CloudNine Solutions</div>
+              <div class="card-value">$234,000</div>
+              <div class="card-company">Cloud Infrastructure</div>
+            </div>
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">Nexus Dynamics</div>
+              <div class="card-value">$178,000</div>
+              <div class="card-company">Enterprise SaaS</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <span class="kanban-title">Proposal</span>
+            <span class="kanban-count">5</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">Quantum Labs</div>
+              <div class="card-value">$312,000</div>
+              <div class="card-company">R&D / Biotech</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <span class="kanban-title">Negotiation</span>
+            <span class="kanban-count">3</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">Vertex AI</div>
+              <div class="card-value">$456,000</div>
+              <div class="card-company">AI / ML Platform</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="kanban-column">
+          <div class="kanban-header">
+            <span class="kanban-title">Closed Won</span>
+            <span class="kanban-count">19</span>
+          </div>
+          <div class="kanban-cards">
+            <div class="kanban-card" draggable="true">
+              <div class="card-title">Horizon Tech</div>
+              <div class="card-value">$890,000</div>
+              <div class="card-company">Full Stack</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ERP PAGE -->
+    <div class="page" id="page-erp">
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value erp">$1.27M</div>
+          <div class="kpi-trend up">↑ 8% vs prior</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Gross Margin</div>
+          <div class="kpi-value proc">68%</div>
+          <div class="kpi-trend up">↑ 2.1%</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Active COGS</div>
+          <div class="kpi-value fin">$412K</div>
+          <div class="kpi-trend down">↓ 3%</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Net Position</div>
+          <div class="kpi-value crm">$858K</div>
+          <div class="kpi-trend up">↑ 11%</div>
+        </div>
+      </div>
+      <div class="data-table">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Balance</th>
+              <th>MTD</th>
+              <th>YTD</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1000 — Cash</td>
+              <td>Asset</td>
+              <td style="font-family: var(--font-mono);">$2,450,000</td>
+              <td style="font-family: var(--font-mono);">$125,000</td>
+              <td style="font-family: var(--font-mono);">$890,000</td>
+              <td><span class="status-badge open">Active</span></td>
+            </tr>
+            <tr>
+              <td>1100 — Accounts Receivable</td>
+              <td>Asset</td>
+              <td style="font-family: var(--font-mono);">$312,450</td>
+              <td style="font-family: var(--font-mono);">$45,000</td>
+              <td style="font-family: var(--font-mono);">$178,000</td>
+              <td><span class="status-badge pending">Pending</span></td>
+            </tr>
+            <tr>
+              <td>2000 — Accounts Payable</td>
+              <td>Liability</td>
+              <td style="font-family: var(--font-mono);">-$89,200</td>
+              <td style="font-family: var(--font-mono);">-$12,000</td>
+              <td style="font-family: var(--font-mono);">-$67,500</td>
+              <td><span class="status-badge pending">Pending</span></td>
+            </tr>
+            <tr>
+              <td>4000 — Revenue</td>
+              <td>Revenue</td>
+              <td style="font-family: var(--font-mono);">$1,270,000</td>
+              <td style="font-family: var(--font-mono);">$145,000</td>
+              <td style="font-family: var(--font-mono);">$958,000</td>
+              <td><span class="status-badge won">Posted</span></td>
+            </tr>
+            <tr>
+              <td>5000 — COGS</td>
+              <td>Expense</td>
+              <td style="font-family: var(--font-mono);">-$412,000</td>
+              <td style="font-family: var(--font-mono);">-$48,000</td>
+              <td style="font-family: var(--font-mono);">-$312,000</td>
+              <td><span class="status-badge won">Posted</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- PROCUREMENT PAGE -->
+    <div class="page" id="page-procurement">
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <div class="kpi-label">Open PRs</div>
+          <div class="kpi-value proc">23</div>
+          <div class="kpi-trend up">↑ 5 new</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Pending Approvals</div>
+          <div class="kpi-value fin">8</div>
+          <div class="kpi-trend up">Needs action</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">POs This Month</div>
+          <div class="kpi-value erp">15</div>
+          <div class="kpi-trend up">$234K value</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Avg. Lead Time</div>
+          <div class="kpi-value crm">4.2 days</div>
+          <div class="kpi-trend down">↓ 0.8 days</div>
+        </div>
+      </div>
+      <div class="data-table">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th>PR #</th>
+              <th>Title</th>
+              <th>Requester</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-family: var(--font-mono);">PR-2024-001</td>
+              <td>AWS Infrastructure Q2</td>
+              <td>Sarah Chen</td>
+              <td style="font-family: var(--font-mono);">$45,000</td>
+              <td><span class="status-badge open">Pending</span></td>
+              <td><button class="btn btn-sm btn-teal">Approve</button></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">PR-2024-002</td>
+              <td>Salesforce License Renewal</td>
+              <td>Mike Johnson</td>
+              <td style="font-family: var(--font-mono);">$28,500</td>
+              <td><span class="status-badge approved">Approved</span></td>
+              <td><button class="btn btn-sm btn-primary">Create PO</button></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">PR-2024-003</td>
+              <td>Office Equipment Refresh</td>
+              <td>Lisa Park</td>
+              <td style="font-family: var(--font-mono);">$12,800</td>
+              <td><span class="status-badge pending">Pending Director</span></td>
+              <td><button class="btn btn-sm btn-amber">Review</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- FINANCE PAGE -->
+    <div class="page" id="page-finance">
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <div class="kpi-label">Cash Position</div>
+          <div class="kpi-value fin">$2.45M</div>
+          <div class="kpi-trend up">↑ 15%</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Pending Invoices</div>
+          <div class="kpi-value crm">12</div>
+          <div class="kpi-trend">$234K total</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">This Month AR</div>
+          <div class="kpi-value erp">$89,400</div>
+          <div class="kpi-trend up">↑ 22%</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">This Month AP</div>
+          <div class="kpi-value proc">$45,200</div>
+          <div class="kpi-trend down">↓ 8%</div>
+        </div>
+      </div>
+      <div class="data-table">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Vendor</th>
+              <th>Amount</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Match</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-family: var(--font-mono);">INV-4892</td>
+              <td>AWS Services</td>
+              <td style="font-family: var(--font-mono);">$45,000</td>
+              <td>2024-02-15</td>
+              <td><span class="status-badge pending">Pending</span></td>
+              <td><span class="status-badge won">Matched</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">INV-4891</td>
+              <td>Google Cloud</td>
+              <td style="font-family: var(--font-mono);">$28,500</td>
+              <td>2024-02-10</td>
+              <td><span class="status-badge won">Paid</span></td>
+              <td><span class="status-badge won">Matched</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">INV-4890</td>
+              <td>Zoom Communications</td>
+              <td style="font-family: var(--font-mono);">$2,400</td>
+              <td>2024-02-08</td>
+              <td><span class="status-badge won">Paid</span></td>
+              <td><span class="status-badge pending">Review Required</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setPage(pageName) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  document.getElementById('page-' + pageName).classList.add('active');
+  document.querySelector('[data-page="' + pageName + '"]').classList.add('active');
+  
+  const titles = { crm: 'CRM', erp: 'ERP', procurement: 'Procurement', finance: 'Finance' };
+  document.getElementById('page-title').textContent = titles[pageName] || pageName;
+}
+
+function createOpp() {
+  alert('Create new opportunity dialog');
+}
+
+// Drag and drop
+document.querySelectorAll('.kanban-card').forEach(card => {
+  card.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', ''));
+});
+</script>
+</body>
+</html>
