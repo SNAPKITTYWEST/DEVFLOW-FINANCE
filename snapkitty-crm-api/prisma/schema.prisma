@@ -80,3 +80,68 @@ model IntelligenceSnapshot {
   burnRateCents BigInt
   timestamp     DateTime @default(now())
 }
+
+// --- FINANCE & GENERAL LEDGER (SAP 4HANA STYLE) ---
+
+model ChartOfAccounts {
+  code        String   @id // e.g. "5000", "1100"
+  orgId      String
+  name       String   // "Cost of Goods Sold", "Accounts Receivable"
+  type       String   // "asset" | "liability" | "equity" | "revenue" | "expense"
+  parentCode String?
+  isActive   Boolean  @default(true)
+  
+  @@index([orgId, code])
+}
+
+model GeneralLedger {
+  id            String   @id @default(cuid())
+  orgId         String
+  entryDate    DateTime
+  description String
+  debitAccount String   // chart of accounts code
+  creditAccount String
+  amount      Float    // cents as float (use BigInt in production)
+  currency    String   @default("USD")
+  sourceType  String   // "invoice" | "payment" | "po" | "expense" | "payroll"
+  sourceId    String   // ID of the originating record
+  createdById String
+  createdAt   DateTime @default(now())
+  
+  @@index([orgId, entryDate])
+  @@index([sourceType, sourceId])
+}
+
+model VendorInvoice {
+  id              String   @id @default(cuid())
+  orgId           String
+  vendorId        String
+  vendor         Vendor   @relation(fields: [vendorId], references: [id])
+  poId            String?  // FK → PurchaseOrder (for 3-way match)
+  po              PurchaseOrder? @relation(fields: [poId], references: [id])
+  invoiceNumber  String
+  invoiceDate    DateTime
+  dueDate        DateTime
+  amount        Float
+  currency      String   @default("USD")
+  status        String   @default("pending") // pending → matched → approved → paid | disputed
+  matchStatus   String?  // "matched" | "quantity_mismatch" | "price_mismatch"
+  paidAt        DateTime?
+  stripePaymentId String?
+  glEntryId     String?  // FK → GeneralLedger
+  createdAt    DateTime @default(now())
+  
+  @@index([orgId, status])
+  @@index([vendorId])
+}
+
+// --- GOODS RECEIPT (for 3-way match) ---
+model GoodsReceipt {
+  id          String   @id @default(cuid())
+  orgId       String
+  poId        String
+  po          PurchaseOrder @relation(fields: [poId], references: [id])
+  receiptDate DateTime
+  status     String   @default("received")
+  createdAt  DateTime @default(now())
+}
