@@ -1,3 +1,5 @@
+import { signIn } from "next-auth/react"
+
 export default function Login() {
   return (
     <main className="min-h-screen bg-black text-white
@@ -10,12 +12,13 @@ export default function Login() {
         <p className="text-zinc-400 mb-8 text-sm">
           Sign in to your workspace
         </p>
-        <a href="https://login.microsoftonline.com"
-           className="block w-full bg-teal-400 text-black
-           py-3 rounded-lg font-bold hover:bg-teal-300
-           text-center">
+        <button
+          onClick={() => signIn("azure-ad",
+            { callbackUrl: "/dashboard" })}
+          className="block w-full bg-teal-400 text-black
+          py-3 rounded-lg font-bold hover:bg-teal-300">
           Sign in with Microsoft
-        </a>
+        </button>
         <p className="text-zinc-600 text-xs mt-6">
           Powered by Azure Entra ID
         </p>
