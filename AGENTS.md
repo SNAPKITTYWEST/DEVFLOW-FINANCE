@@ -1,93 +1,62 @@
-# DevFlow Sovereign OS | Federated Financial Core
+# Collective SpendOS | Federated Financial Control Tower
 
 ## Ecosystem Overview
-SnapKitty is a "Systems over Software" implementation of a **Federated Multi-Entity Wealth OS**. It is designed to manage high-velocity capital flows across non-profit (DIF), B-Corp, and Trust-Vault structures using deterministic financial principles.
+Collective SpendOS is a high-security, AI-native corporate spend management and procurement system. It fuses an ERP backbone (SAP-style) with modern spend controls (Ramp/Brex-style) into a single, agent-driven "War Room" for financial orchestration.
 
-### The "Bifrost" Architecture
-The system operates on a decoupled micro-service philosophy:
-1. **Canonical Ledger**: BigInt-based deterministic financial truth (SSOT)
-2. **Bifrost Bridge**: Oracle-style synchronization with Open Collective & Plaid
-3. **Intelligence Hub**: Lexus Nexus analytics and Sovereign Credit Scoring (SCS)
-4. **Command UI**: High-density vanilla JS cockpit for real-time orchestration
+### The "Bifrost" Architecture (v5.0)
+The system operates on an immutable, event-driven architecture where the **Ledger is God**.
+1. **Canonical Ledger**: BigInt-based deterministic financial truth (Neon Serverless Postgres).
+2. **Bifrost Bridge**: Real-time synchronization with Stripe (Payments) and Plaid (Banking).
+3. **Spend Control Layer**: Budget enforcement and virtual card provisioning (Unit.co integration).
+4. **Command UI**: High-density "Control Tower" for real-time spend visibility.
 
-### Compliance Architecture
-- **ASC 606**: Revenue recognition with performance obligation mapping
-- **SOX Ready**: Single canonical ledger with reconciliation audit trail
-- **Event-Driven**: Kafka-style immutable event bus with schema versioning
+## Agent Instructions & Roles
 
-## Architecture
-- **No frameworks**: Pure JavaScript, HTML, CSS (Vanilla JS philosophy)
-- **State management**: Single `state` object persisted to localStorage as JSON
-- **Rendering**: Direct DOM manipulation via `render()` functions
-- **Key files**: `app/app.js` (logic), `app/index.html` (structure), `app/styles.css` (styling)
+### 🟣 GEMINI — CORE BUILDER (Architect)
+**Objective**: Design and implement the financial control layer above the CRM and ledger.
+- **Rules**: Every transaction must write to the ledger first. No UI-only state.
+- **Deliverables**: API design, database extensions, event lifecycle models.
+
+### 🔵 OPENCODE — IMPLEMENTATION ENGINE (Backend)
+**Objective**: Implement SpendOS backend APIs.
+- **Endpoints**: 
+  - `POST /api/spend/cards/create`
+  - `POST /api/spend/transaction/authorize`
+  - `POST /api/spend/approval/request`
+  - `GET /api/spend/dashboard`
+- **Rules**: Enforce budget checks before authorization. Return structured JSON.
+
+### 🟡 KIWI — UI/UX SYSTEM (Frontend)
+**Objective**: Design the "Control Tower" UI.
+- **Features**: Spend dashboard, Virtual Cards UI, Approval Inbox, Procurement Form.
+- **Aesthetic**: "Bloomberg Terminal × Modern Fintech". Dark mode, high-density, zero-lag.
+
+### 🔴 ANALYST — FINANCIAL LOGIC (Governance)
+**Objective**: Define financial governance and audit rules.
+- **Logic**: Budget enforcement (Hard stop/Soft warning), Anomaly detection, Approval thresholds.
+- **Mantra**: "Every dollar in. Every dollar out. Every dollar explained."
+
+### ⚫ GROK — REAL-TIME ENGINE (SSE/Events)
+**Objective**: Build the real-time financial event bus.
+- **Functions**: Stream transaction updates, push ledger changes to UI, trigger budget breach alerts.
 
 ## Core Patterns
 
-### State Structure (Sovereign Multi-Entity)
-```javascript
-state = {
-  // CANONICAL LEDGER (SSOT - Single Source of Truth)
-  funds: {
-    canonicalLedger: { id, type: "PRIMARY", lastReconciled, reconciledBy },
-    segmentLedgers: [{ id, name, type, balance, vault, parentLedger }],
-    syncBridge: { sourceSystem, destinationSystem, reconciliationRules, lastReconciliation },
-    asc606: { contracts: [], performanceObligations: [], schemaVersion }
-  },
-  
-  // ANALYTICS (Non-Financial Oracle Layer)
-  analytics: { scsScore, lcr, trustVaultValue },
-  
-  contacts: [{ id, name, company, email, status }],
-  deals: [{ id, title, owner, value, stage }],
-  tasks: [{ id, title, owner, dueDate, priority, completed }],
-  activity: [{ id, schemaVersion, eventType, immutable, timestamp, text, time }]
-}
-```
-
 ### Financial Precision
-- Always use cents (integers) for financial calculations
-- Use `toCents(dollars)` and `toDollars(cents)` helpers
-- Frontend only displays - never calculates financial truth
-- Backend determines financial truth, event system records it
+- **Truth Source**: The Neon DB is the Single Source of Truth (SSOT).
+- **Integers Only**: All financial calculations performed in cents/BigInt.
+- **Auditability**: Every `LedgerEntry` generated with a SHA-256 hash chain for SOX compliance.
 
-### Form Handling
-Use `FormData` for form submissions:
-```javascript
-function handleContactSubmit(event) {
-  event.preventDefault();
-  const formData = new FormData(event.currentTarget);
-  const contact = { id: crypto.randomUUID(), ...Object.fromEntries(formData) };
-  state.contacts.unshift(contact);
-  persistState();
-  render();
-}
-```
-
-### Rendering
-Each section has a dedicated render function (`renderContacts`, `renderDeals`, etc.) that generates HTML strings and sets `innerHTML`. Use `escapeHtml()` for user input to prevent XSS.
-
-### Styling Conventions
-- CSS custom properties for colors (e.g., `--accent: #0d6b50`)
-- Monospace fonts for financial numbers (Courier New for precision)
-- Serif fonts (Georgia) for headers (authority)
-- High-density grid layouts for data-rich display
-
-### Event Bus (Immutable Audit Trail)
-Log all state changes with `pushActivity(text, eventType)`:
-```javascript
-pushActivity("Bifrost Bridge: Multi-Entity Ledgers Verified.", "LEDGER_SYNC");
-```
-
-## Development Workflow
-- Open `app/index.html` in browser to run
-- No build tools required
-- Edit files directly, refresh browser
-- Demo data seeded via "Reset Demo Data" button
+### System Flow
+1. **Request**: User requests spend via Procurement UI.
+2. **Approval**: Workflow triggers based on budget and role-based thresholds.
+3. **Provisioning**: Virtual card authorized and issued (Unit.co).
+4. **Transaction**: Spend occurs -> Stripe/Unit webhook fires.
+5. **Persistence**: Ledger write -> Budget update -> Audit trail link.
+6. **Streaming**: Grok pushes real-time update to the Control Tower.
 
 ## Key Directories
-- `app/`: Complete application (HTML, JS, CSS)
-- `orchestrator/`: Python bridge services (Bifrost API)
-- `contracts/`: ASC 606 revenue recognition logic
-- `intelligence/`: SCS risk scoring models
-- `vault/`: Ledger reconciliation rules
-- Root: Project documentation and licensing
+- `src/app/api/spend/`: SpendOS API handlers.
+- `src/lib/ledger/`: Canonical ledger logic and hash chaining.
+- `src/components/dashboard/`: Control Tower UI components.
+- `prisma/`: SpendOS data models.

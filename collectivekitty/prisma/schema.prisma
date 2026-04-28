@@ -1,5 +1,5 @@
-// SnapKitty Collective | Prisma Schema v2.2.0
-// Sprint 1-4: CRUD + Procurement + Real-time + Finance
+// SnapKitty Collective | Prisma Schema v5.0.0
+// BIFROST SOVEREIGN CORE: Fintech, Ledger, & Immutable Audit Chains
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +11,7 @@ datasource db {
 }
 
 // ============================================================================
-// SPRINT 1: CRM OPPORTUNITIES
+// CORE ENTITIES
 // ============================================================================
 
 model User {
@@ -27,15 +27,24 @@ model User {
   purchaseRequisitions PurchaseRequisition[]
 }
 
+model Organization {
+  id                    String   @id @default(cuid())
+  name                  String
+  stripeAccountId       String?
+  createdAt             DateTime @default(now())
+  users                User[]
+  opportunities        Opportunity[]
+  vendorInvoices       VendorInvoice[]
+  financialAccounts    FinancialAccount[]
+  ledgerEntries        LedgerEntry[]
+}
+
 model Company {
   id          String   @id @default(cuid())
   companyId    String   @unique
   name        String
   domain      String?
   industry   String?
-  stripeCustomerId String?
-  subscriptionStatus String?
-  subscriptionId    String?
   createdAt   DateTime @default(now())
   opportunities Opportunity[]
 }
@@ -52,13 +61,14 @@ model Opportunity {
   owner      User     @relation(fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  project     Project?
 
   @@index([ownerId])
   @@index([stage])
 }
 
 // ============================================================================
-// SPRINT 2: PROCUREMENT
+// PROCUREMENT & AP
 // ============================================================================
 
 model Vendor {
@@ -78,18 +88,14 @@ model PurchaseRequisition {
   title         String
   description   String?
   totalAmount  Float
-  status      String   @default("pending") // pending, pending_director, approved, rejected, ordered
+  status      String   @default("pending")
   requesterId  String
   requester   User     @relation(fields: [requesterId], references: [id])
   approverId  String?
-  approverNotes String?
   approvedAt DateTime?
   createdAt  DateTime @default(now())
   items       PurchaseRequisitionItem[]
   orders      PurchaseOrder[]
-
-  @@index([status])
-  @@index([requesterId])
 }
 
 model PurchaseRequisitionItem {
@@ -98,7 +104,6 @@ model PurchaseRequisitionItem {
   quantity     Int
   unitPrice    Float
   totalPrice  Float
-  category    String?
   requisitionId String
   requisition PurchaseRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
 }
@@ -111,36 +116,14 @@ model PurchaseOrder {
   vendor     Vendor  @relation(fields: [vendorId], references: [id])
   title      String
   totalAmount Float
-  status     String   @default("pending") // pending, ordered, received, paid
-  notes      String?
-  createdById String
+  status     String   @default("pending")
   createdAt  DateTime @default(now())
-
-  @@index([vendorId])
-  @@index([status])
 }
-
-// ============================================================================
-// SPRINT 3: EVENTS (Real-time)
-// ============================================================================
-
-model Event {
-  id        String   @id @default(cuid())
-  type      String
-  payload   Json?
-  timestamp DateTime @default(now())
-
-  @@index([type])
-  @@index([timestamp])
-}
-
-// ============================================================================
-// SPRINT 4: FINANCE (3-way match)
-// ============================================================================
 
 model VendorInvoice {
   id              String   @id @default(cuid())
   orgId           String
+  organization    Organization @relation(fields: [orgId], references: [id])
   vendorId        String
   vendor         Vendor  @relation(fields: [vendorId], references: [id])
   poId            String?
@@ -150,233 +133,25 @@ model VendorInvoice {
   dueDate        DateTime
   amount        Float
   currency      String   @default("USD")
-  status        String   @default("pending")
-  matchStatus   String?
+  status        String   @default("pending") // pending | paid | overdue
   paidAt        DateTime?
-  stripePaymentId String?
   createdAt    DateTime @default(now())
-
-  @@index([orgId, status])
-  @@index([vendorId])
-}
-
-model GeneralLedger {
-  id            String   @id @default(cuid())
-  orgId         String
-  entryDate    DateTime
-  description String
-  debitAccount String
-  creditAccount String
-  amount      Float
-  currency    String   @default("USD")
-  sourceType  String
-  sourceId    String
-  createdById String
-  createdAt   DateTime @default(now())
-
-  @@index([orgId, entryDate])
-  @@index([sourceType, sourceId])
-}
-
-model ChartOfAccounts {
-  code     String @id
-  orgId    String
-  name     String
-  type     String
-  parentCode String?
-  isActive Boolean @default(true)
 }
 
 // ============================================================================
-// FIN TECH (Stripe)
-// ============================================================================
-
-model Organization {
-  id                    String   @id @default(cuid())
-  name                  String
-  stripeAccountId       String?
-  stripeConnectStatus   Json?
-  stripeChargesEnabled Boolean?
-  stripePayoutsEnabled  Boolean?
-  createdAt             DateTime @default(now())
-  users                User[]
-  opportunities        Opportunity[]
-  generalLedger        GeneralLedger[]
-  vendorInvoices       VendorInvoice[]
-}
-
-model PaymentLink {
-  id        String   @id @default(cuid())
-  linkId    String   @unique
-  invoiceId String
-  url       String
-  amount    Float
-  currency  String   @default("USD")
-  status    String   @default("active")
-  expiresAt DateTime?
-  createdAt DateTime @default(now())
-}
-
-model FinancialTransaction {
-  id          String   @id @default(cuid())
-  type        String   // PAYOUT, TRANSFER, REFUND
-  amount      Float
-  currency    String   @default("USD")
-  status      String   @default("pending")
-  vendorId    String?
-  invoiceId   String?
-  externalId  String?  // Stripe payment/transfer ID
-  metadata    Json?
-  createdById String
-  createdAt   DateTime @default(now())
-
-  @@index([externalId])
-  @@index([type])
-}
-
-// ============================================================================
-// PLAID BANK LINKS
-// ============================================================================
-
-model BankLink {
-  id          String   @id @default(cuid())
-  userId      String
-  orgId       String
-  itemId      String   // Plaid item ID
-  accessToken String   // Encrypted
-  status     String   @default("pending")
-  cursor     String?  // Plaid cursor for sync
-  lastSyncAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  transactions BankTransaction[]
-
-  @@index([userId])
-  @@index([orgId])
-}
-
-model BankTransaction {
-  id            String   @id @default(cuid())
-  bankLinkId    String
-  bankLink     BankLink @relation(fields: [bankLinkId], references: [id])
-  transactionId String   @unique
-  amount       Float
-  date         DateTime
-  name         String
-  merchantName String?
-  category     String?
-  pending     Boolean  @default(false)
-  currency    String   @default("USD")
-  matchedAt    DateTime?
-  matchedTo    String?
-  createdAt    DateTime @default(now())
-
-  @@index([bankLinkId])
-  @@index([date])
-}
-
-// ============================================================================
-// COMPLIANCE / KYC
-// ============================================================================
-
-model KycRecord {
-  id           String   @id @default(cuid())
-  userId       String
-  orgId        String
-  status      String   // pending, review, approved, rejected
-  score       Int
-  riskLevel   String   // low, medium, high
-  firstName   String
-  lastName    String
-  dateOfBirth DateTime
-  address     String
-  city        String
-  state       String
-  postalCode  String
-  documentId  String?
-  completedAt DateTime?
-  createdAt   DateTime @default(now())
-
-  @@index([userId])
-}
-
-// ============================================================================
-// VIRTUAL ACCOUNTS & CARDS
-// ============================================================================
-
-model VirtualAccount {
-  id            String   @id @default(cuid())
-  userId        String
-  orgId         String
-  unitAccountId String   @unique
-  type          String   // individual, business
-  status       String   @default("pending")
-  createdAt     DateTime @default(now())
-  cards        VirtualCard[]
-}
-
-model VirtualCard {
-  id            String   @id @default(cuid())
-  accountId    String
-  account      VirtualAccount @relation(fields: [accountId], references: [id])
-  userId        String
-  orgId        String
-  unitCardId   String   @unique
-  lastFour     String?
-  expiryMonth  Int?
-  expiryYear   Int?
-  status       String   @default("pending")
-  createdAt    DateTime @default(now())
-  transactions CardTransaction[]
-
-  @@index([accountId])
-}
-
-model CardTransaction {
-  id                 String   @id @default(cuid())
-  card               VirtualCard @relation(fields: [cardId], references: [id])
-  cardId             String
-  unitTransactionId String   @unique
-  amount             Float
-  type               String
-  status             String
-  direction          String   // credit, debit
-  createdAt          DateTime @default(now())
-}
-
-// ============================================================================
-// RECONCILIATION
-// ============================================================================
-
-model ReconciliationRun {
-  id              String   @id @default(cuid())
-  runId           String   @unique
-  orgId           String
-  matchedCount    Int      @default(0)
-  exceptionCount Int      @default(0)
-  status         String   @default("running")
-  completedAt    DateTime @default(now())
-}
-
-// ============================================================================
-// SPRINT 5: FINTECH BaaS (Banking & Cards)
+// BIFROST FINANCIAL CORE (Immutable Ledger)
 // ============================================================================
 
 model FinancialAccount {
   id                String          @id @default(cuid())
   orgId             String
+  organization      Organization    @relation(fields: [orgId], references: [id])
   accountName       String
-  accountType       String          // "operating" | "reserve" | "payroll" | "tax" | "escrow"
+  accountType       String          // operating | reserve | payroll
   currency          String          @default("USD")
-  provider          String          // "unit" | "stripe" | "plaid_linked" | "manual"
-  providerAccountId String?         // external ID from provider
-  unitAccountId     String?         // Unit.co account ID
-  plaidAccountId    String?         // Plaid item/account ID
-  routingNumber     String?
-  accountNumber     String?         // encrypted at rest
+  provider          String          // unit | stripe | plaid
   currentBalance    Float           @default(0)
   availableBalance  Float           @default(0)
-  lastSyncedAt      DateTime?
   isActive          Boolean         @default(true)
   createdAt         DateTime        @default(now())
   transactions      FinancialTransaction[]
@@ -387,37 +162,28 @@ model FinancialTransaction {
   orgId             String
   accountId         String
   account           FinancialAccount @relation(fields: [accountId], references: [id])
-  externalId        String?         @unique  // provider transaction ID
-  provider          String          // "stripe" | "plaid" | "unit" | "dwolla"
-  type              String          // "credit" | "debit"
-  amount            Float           // always positive
-  currency          String          @default("USD")
+  externalId        String?         @unique
+  type              String          // credit | debit
+  amount            Float
   description       String
-  category          String?         // auto-categorized
   glCode            String?
-  status            String          // "pending" | "posted" | "failed" | "cancelled"
-  sourceType        String?         // "invoice" | "po" | "payroll" | "expense" | "transfer"
-  sourceId          String?         // ID of originating record in our system
-  metadata          Json?           // raw provider payload
+  status            String          // pending | posted | failed
+  reconciliationId  String?
   postedAt          DateTime?
   createdAt         DateTime        @default(now())
-  reconciliationId  String?
-  @@index([orgId, accountId, createdAt])
-  @@index([externalId])
-  @@index([sourceType, sourceId])
 }
 
 model LedgerEntry {
   id                String          @id @default(cuid())
   orgId             String
-  entryNumber       String          @unique  // LE-{YEAR}-{SEQUENCE}
+  organization      Organization    @relation(fields: [orgId], references: [id])
+  entryNumber       String          @unique  // LE-2024-0001
   entryDate         DateTime
   description       String
-  status            String          @default("posted")  // posted only — immutable
-  hash              String          // SHA-256 of entry data — tamper detection
+  hash              String          // SHA-256 for tamper detection
+  previousHash      String?         // Chain link
   lines             LedgerLine[]
   createdAt         DateTime        @default(now())
-  @@index([orgId, entryDate])
 }
 
 model LedgerLine {
@@ -429,22 +195,23 @@ model LedgerLine {
   credit            Float        @default(0)
   description       String?
   transactionId     String?
-  @@index([accountCode])
 }
+
+// ============================================================================
+// FINTECH BaaS (Cards)
+// ============================================================================
 
 model VirtualCard {
   id                String       @id @default(cuid())
   orgId             String
-  userId            String       // card holder
+  userId            String
   unitCardId        String       @unique
   last4             String
   expiryMonth       Int
   expiryYear        Int
-  status            String       @default("active")  // active | frozen | terminated
+  status            String       @default("active")
   spendLimit        Float?
-  spendInterval     String?      // "daily" | "weekly" | "monthly" | "total"
   spentToDate       Float        @default(0)
-  category          String?      // restrict to category
   createdAt         DateTime     @default(now())
   transactions      CardTransaction[]
 }
@@ -455,11 +222,43 @@ model CardTransaction {
   card              VirtualCard @relation(fields: [cardId], references: [id])
   unitTransactionId String      @unique
   merchant          String
-  merchantCategory  String?
   amount            Float
-  currency          String      @default("USD")
-  status            String      // "pending" | "complete" | "declined"
-  glCode            String?
-  receiptUrl        String?
+  status            String
   createdAt         DateTime    @default(now())
+}
+
+// ============================================================================
+// ERP / PROJECT MATERIALIZATION
+// ============================================================================
+
+model Project {
+  id            String   @id @default(cuid())
+  orgId         String
+  name          String
+  status        String   @default("active")
+  budget        Float
+  opportunityId String?  @unique
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  createdAt     DateTime @default(now())
+  tasks         ProjectTask[]
+}
+
+model ProjectTask {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String
+  status      String   @default("todo")
+  createdAt   DateTime @default(now())
+}
+
+// ============================================================================
+// SYSTEM EVENTS
+// ============================================================================
+
+model Event {
+  id        String   @id @default(cuid())
+  type      String
+  payload   Json?
+  timestamp DateTime @default(now())
 }
