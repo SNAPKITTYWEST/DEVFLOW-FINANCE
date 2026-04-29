@@ -264,8 +264,8 @@ export default function CRMPortal() {
 
   // Stats
   const stats = useMemo(() => {
-    const total = deals.reduce((sum, d) => sum + d.value, 0);
-    const won = deals.filter(d => d.stage === 'CLOSED_WON' || d.stage === 'closed_won').length;
+    const total = deals.reduce((sum: number, d: any) => sum + d.value, 0);
+    const won = deals.filter(d => (d.stage as string) === 'CLOSED_WON' || (d.stage as string) === 'closed_won').length;
     // ...
     const closed = deals.filter(d => d.stage.startsWith('CLOSED')).length;
     const winRate = closed > 0 ? (won / closed) * 100 : 0;
