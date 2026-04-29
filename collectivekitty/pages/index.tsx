@@ -270,12 +270,12 @@ export default function Landing() {
             boxShadow: "0 4px 20px rgba(124, 58, 237, 0.4)"
           }}
           onMouseOver={(e) => {
-            e.target.style.transform = "scale(1.05) translateY(-2px)";
-            e.target.style.boxShadow = "0 8px 30px rgba(124, 58, 237, 0.6)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(124, 58, 237, 0.6)";
           }}
           onMouseOut={(e) => {
-            e.target.style.transform = "scale(1) translateY(0)";
-            e.target.style.boxShadow = "0 4px 20px rgba(124, 58, 237, 0.4)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(124, 58, 237, 0.4)";
           }}>
             Deploy to Collective →
           </a>
@@ -293,14 +293,14 @@ export default function Landing() {
             backdropFilter: "blur(10px)"
           }}
           onMouseOver={(e) => {
-            e.target.style.background = "rgba(124, 58, 237, 0.1)";
-            e.target.style.borderColor = "#7C3AED";
-            e.target.style.transform = "scale(1.05) translateY(-2px)";
+            (e.currentTarget as HTMLElement).style.background = "rgba(124, 58, 237, 0.1)";
+            (e.currentTarget as HTMLElement).style.borderColor = "#7C3AED";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
           }}
           onMouseOut={(e) => {
-            e.target.style.background = "rgba(255, 255, 255, 0.05)";
-            e.target.style.borderColor = "rgba(124, 58, 237, 0.5)";
-            e.target.style.transform = "scale(1) translateY(0)";
+            (e.currentTarget as HTMLElement).style.background = "rgba(255, 255, 255, 0.05)";
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(124, 58, 237, 0.5)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
           }}>
             ▶ Watch Demo
           </a>
@@ -677,12 +677,12 @@ export default function Landing() {
             boxShadow: "0 4px 20px rgba(124, 58, 237, 0.4)"
           }}
           onMouseOver={(e) => {
-            e.target.style.transform = "scale(1.05) translateY(-2px)";
-            e.target.style.boxShadow = "0 8px 30px rgba(124, 58, 237, 0.6)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(124, 58, 237, 0.6)";
           }}
           onMouseOut={(e) => {
-            e.target.style.transform = "scale(1) translateY(0)";
-            e.target.style.boxShadow = "0 4px 20px rgba(124, 58, 237, 0.4)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(124, 58, 237, 0.4)";
           }}>
             Learn about Bifrost →
           </a>
@@ -852,12 +852,12 @@ export default function Landing() {
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)"
           }}
           onMouseOver={(e) => {
-            e.target.style.transform = "scale(1.05) translateY(-2px)";
-            e.target.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.5)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.5)";
           }}
           onMouseOut={(e) => {
-            e.target.style.transform = "scale(1) translateY(0)";
-            e.target.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.3)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.3)";
           }}>
             Deploy to Collective →
           </a>
@@ -953,8 +953,8 @@ export default function Landing() {
                   textDecoration: "none", 
                   fontSize: "0.8rem" 
                 }}
-                onMouseOver={(e) => e.target.style.color = "#7C3AED"}
-                onMouseOut={(e) => e.target.style.color = "#52525b"}>
+                onMouseOver={(e) => (e.currentTarget as HTMLElement).style.color = "#7C3AED"}
+                onMouseOut={(e) => (e.currentTarget as HTMLElement).style.color = "#52525b"}>
                   {link}
                 </a>
               ))}
