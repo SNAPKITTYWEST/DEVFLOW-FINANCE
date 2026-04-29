@@ -8,9 +8,19 @@ export interface Transaction {
   date: string;
 }
 
+export interface Contract {
+  id: string;
+  name: string;
+  client: string;
+  value: number;
+  startDate: string;
+  endDate: string;
+  status: 'Draft' | 'Active' | 'Completed';
+}
+
 export interface Event {
   id: string;
-  type: 'sync' | 'transaction' | 'system' | 'alert';
+  type: 'sync' | 'transaction' | 'system' | 'alert' | 'contract';
   description: string;
   timestamp: string;
 }
@@ -23,6 +33,7 @@ export interface Alert {
 
 export const db = {
   transactions: [] as Transaction[],
+  contracts: [] as Contract[],
   events: [
     { id: '1', type: 'system', description: 'Bifrost Bridge Initialized', timestamp: new Date().toISOString() }
   ] as Event[],

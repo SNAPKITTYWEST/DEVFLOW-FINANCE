@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [activeRange, setActiveRange] = useState('Day');
   const [isSyncing, setIsSyncing] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
   const [isHealthy, setIsHealthy] = useState(true);
 
   // Data states
@@ -133,6 +134,29 @@ export default function Dashboard() {
       }
     } catch (e) {
       toast.error("POST FAILED");
+    }
+  };
+
+  const handleNewContract = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/contracts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        toast.success("CONTRACT CREATED");
+        setShowContractModal(false);
+        fetchEvents();
+        fetchMetrics();
+      }
+    } catch (e) {
+      toast.error("CONTRACT CREATION FAILED");
     }
   };
 
@@ -383,7 +407,7 @@ export default function Dashboard() {
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] italic mb-6 text-zinc-500">Quick Actions</h3>
                 <div className="space-y-3">
                    <button
-                    onClick={() => router.push('/contracts')}
+                    onClick={() => setShowContractModal(true)}
                     className="flex items-center justify-between w-full p-3 bg-[#111]/50 hover:bg-[#111] rounded-xl border border-zinc-800 transition-all group"
                    >
                       <div className="flex items-center gap-3">
@@ -430,6 +454,113 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
+
+      {/* Contract Modal */}
+      <AnimatePresence>
+        {showContractModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowContractModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-[#0d0d0d] border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-[#111]/50">
+                <h2 className="text-sm font-black uppercase tracking-widest italic text-white flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#00D4AA]" /> Register Contract
+                </h2>
+                <button onClick={() => setShowContractModal(false)} className="text-zinc-500 hover:text-white transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleNewContract} className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">Contract Name</label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    placeholder="Project Alpha Master Service Agreement"
+                    className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-sans placeholder:text-zinc-800"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">Company / Client</label>
+                  <input
+                    name="client"
+                    type="text"
+                    required
+                    placeholder="Stark Industries"
+                    className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-sans placeholder:text-zinc-800"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">Total Value (USD)</label>
+                  <input
+                    name="value"
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="0.00"
+                    className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-mono placeholder:text-zinc-800"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">Start Date</label>
+                    <input
+                      name="startDate"
+                      type="date"
+                      required
+                      className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">End Date</label>
+                    <input
+                      name="endDate"
+                      type="date"
+                      required
+                      className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">Status</label>
+                  <select
+                    name="status"
+                    required
+                    className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-mono"
+                  >
+                    <option value="Draft">DRAFT</option>
+                    <option value="Active">ACTIVE</option>
+                    <option value="Completed">COMPLETED</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 bg-white text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-xl hover:bg-[#00D4AA] transition-all shadow-lg mt-2"
+                >
+                  Execute Contract
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Transaction Modal */}
       <AnimatePresence>
