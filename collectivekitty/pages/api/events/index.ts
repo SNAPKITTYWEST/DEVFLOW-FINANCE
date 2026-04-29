@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       // Map Prisma events back to the UI's expected format if necessary
-      const mappedEvents = events.map(e => ({
+      const mappedEvents = events.map((e: any) => ({
         id: e.id,
         type: e.type,
         description: (e.payload as any)?.description || `${e.type} event recorded`,
