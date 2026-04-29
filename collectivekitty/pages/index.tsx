@@ -162,8 +162,8 @@ export default function Landing() {
             textDecoration: "none",
             transition: "transform 0.2s"
           }}
-          onMouseOver={(e) => e.target.style.transform = "scale(1.05)"}
-          onMouseOut={(e) => e.target.style.transform = "scale(1)"}>
+          onMouseOver={(e) => (e.currentTarget as HTMLElement).style.transform = "scale(1.05)"}
+          onMouseOut={(e) => (e.currentTarget as HTMLElement).style.transform = "scale(1)"}>
             Sign In
           </a>
         </div>
