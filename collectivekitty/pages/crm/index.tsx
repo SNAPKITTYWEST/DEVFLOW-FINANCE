@@ -239,16 +239,34 @@ const KanbanColumn = ({
 // --- Main Page ---
 
 export default function CRMPortal() {
-  const [deals, setDeals] = useState<Deal[]>(INITIAL_DEALS);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchDeals = async () => {
+    try {
+      const res = await fetch('/api/crm/opportunities');
+      const data = await res.json();
+      setDeals(data);
+    } catch (e) {
+      console.error("Failed to fetch deals", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeals();
+  }, []);
+
   // Stats
   const stats = useMemo(() => {
     const total = deals.reduce((sum, d) => sum + d.value, 0);
-    const won = deals.filter(d => d.stage === 'CLOSED_WON').length;
+    const won = deals.filter(d => d.stage === 'CLOSED_WON' || d.stage === 'closed_won').length;
+    // ...
     const closed = deals.filter(d => d.stage.startsWith('CLOSED')).length;
     const winRate = closed > 0 ? (won / closed) * 100 : 0;
     const avgSize = deals.length > 0 ? total / deals.length : 0;
@@ -273,12 +291,52 @@ export default function CRMPortal() {
     e.dataTransfer.setData('dealId', dealId);
   };
 
-  const handleDrop = (e: React.DragEvent, targetStage: Stage) => {
+  const handleDrop = async (e: React.DragEvent, targetStage: Stage) => {
     const dealId = e.dataTransfer.getData('dealId');
-    setDeals(prev => prev.map(d =>
-      d.id === dealId ? { ...d, stage: targetStage, daysInStage: 0 } : d
-    ));
+    try {
+      const res = await fetch('/api/crm/opportunities', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: dealId, stage: targetStage }),
+      });
+      if (res.ok) {
+        setDeals(prev => prev.map(d =>
+          d.id === dealId ? { ...d, stage: targetStage } : d
+        ));
+      }
+    } catch (e) {
+      console.error("Failed to update deal stage", e);
+    }
   };
+
+  const handleAddDeal = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/crm/opportunities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        setIsAddModalOpen(false);
+        fetchDeals();
+      }
+    } catch (e) {
+      console.error("Failed to add deal", e);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-[#00D4AA] flex items-center justify-center font-mono uppercase tracking-widest text-[10px]">
+        Loading Pipeline...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#00D4AA]/30">
@@ -513,23 +571,23 @@ export default function CRMPortal() {
             <div className="absolute top-0 left-0 right-0 h-1 bg-[#00D4AA]"></div>
             <h2 className="text-2xl font-black uppercase italic mb-8">Initiate New Opportunity</h2>
 
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setIsAddModalOpen(false); }}>
+            <form className="space-y-6" onSubmit={handleAddDeal}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Deal Name</label>
-                  <input type="text" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none" placeholder="e.g. Q3 Expansion" required />
+                  <input name="name" type="text" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none" placeholder="e.g. Q3 Expansion" required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Company</label>
-                  <input type="text" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none" placeholder="Target Organization" required />
+                  <input name="company" type="text" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none" placeholder="Target Organization" required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Contract Value ($)</label>
-                  <input type="number" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none" placeholder="0.00" required />
+                  <input name="value" type="number" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none" placeholder="0.00" required />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Stage</label>
-                  <select className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none">
+                  <select name="stage" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm focus:border-[#00D4AA] outline-none">
                     <option value="PROSPECTING">Prospecting</option>
                     <option value="QUALIFIED">Qualified</option>
                     <option value="NEGOTIATION">Negotiation</option>
