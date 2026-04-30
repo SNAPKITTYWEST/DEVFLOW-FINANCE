@@ -1,3 +1,4 @@
+// SnapKitty Procure Module v1.0
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState, useCallback } from "react";
