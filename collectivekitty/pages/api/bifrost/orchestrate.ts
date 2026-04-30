@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next"
-import { bifrostIngest } from "../../../lib/bifrost"
+import { createEvent, EventTypes } from "../../../lib/eventContract"
+import { runPipeline } from "../../../lib/bifrost/pipeline"
 
 export default async function handler(
   req: NextApiRequest,
@@ -9,25 +10,27 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" })
   }
 
-  const { input, source } = req.body
-  const trace: any[] = []
+  try {
+    const { input, source } = req.body
 
-  // Step 1: Ingest
-  trace.push({ step: "ingest", status: "running" })
-  const event = await bifrostIngest(
-    source || "manual",
-    "orchestration",
-    { input }
-  )
-  trace.push({ step: "ingest", status: "complete", eventId: event.id })
+    // In the new architecture, orchestration is handled by the pipeline
+    const event = createEvent(
+      EventTypes.BIFROST_INGESTED,
+      source || "manual",
+      { input, manual_trigger: true }
+    )
 
-  // Step 2: Process
-  trace.push({ step: "process", status: "complete",
-    riskScore: event.riskScore })
+    const result = await runPipeline(event)
 
-  return res.status(200).json({
-    final_output: `Bifrost processed: ${input}`,
-    trace,
-    eventId: event.id
-  })
+    return res.status(200).json({
+      final_output: `Bifrost processed: ${input}`,
+      trace: result.trace,
+      eventId: result.eventId,
+      score: result.score,
+      level: result.level
+    })
+  } catch (error) {
+    console.error("Orchestration error:", error)
+    return res.status(500).json({ error: "Orchestration failed" })
+  }
 }

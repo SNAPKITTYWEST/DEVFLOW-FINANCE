@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next"
 import { PrismaClient } from "@prisma/client"
-import { bifrostIngest } from "../../../lib/bifrost"
+import { createEvent, EventTypes } from "../../../lib/eventContract"
+import { runPipeline } from "../../../lib/bifrost/pipeline"
 const prisma = new PrismaClient()
 
 export default async function handler(
@@ -32,12 +33,13 @@ export default async function handler(
       }
     })
 
-    await bifrostIngest("procurement", "requisition_created", {
-      prId: pr.id,
-      amount: pr.amount,
-      priority: pr.priority,
-      autoApproved: status === "approved"
-    })
+    await runPipeline(
+      createEvent(
+        EventTypes.REQUISITION_CREATED,
+        "procurement",
+        { prId: pr.id, amount: pr.amount, priority: pr.priority, autoApproved: status === "approved" }
+      )
+    )
 
     return res.status(201).json({ data: pr })
   }

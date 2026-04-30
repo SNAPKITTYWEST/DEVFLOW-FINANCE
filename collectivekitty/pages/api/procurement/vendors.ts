@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next"
 import { PrismaClient } from "@prisma/client"
+import { createEvent, EventTypes } from "../../../lib/eventContract"
+import { runPipeline } from "../../../lib/bifrost/pipeline"
 const prisma = new PrismaClient()
 
 export default async function handler(
@@ -18,6 +20,16 @@ export default async function handler(
     const vendor = await prisma.vendor.create({
       data: { name, email, phone, website, category }
     })
+
+    // Pipeline event
+    await runPipeline(
+      createEvent(
+        EventTypes.VENDOR_ADDED,
+        "procurement",
+        { vendorId: vendor.id, name: vendor.name, category: vendor.category }
+      )
+    )
+
     return res.status(201).json({ data: vendor })
   }
 }

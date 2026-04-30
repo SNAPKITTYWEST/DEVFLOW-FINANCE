@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '../../../lib/prisma';
+import { createEvent, EventTypes } from "../../../lib/eventContract";
+import { runPipeline } from "../../../lib/bifrost/pipeline";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -26,13 +28,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
-      // Log event
-      await prisma.event.create({
-        data: {
-          type: 'deal_created',
-          payload: deal as any,
-        }
-      });
+      // Pipeline event
+      await runPipeline(
+        createEvent(
+          EventTypes.DEAL_CREATED,
+          "crm",
+          { dealId: deal.id, amount: deal.value, company: deal.company }
+        )
+      );
 
       res.status(201).json(deal);
     } catch (error) {
@@ -46,12 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: { stage },
       });
 
-      await prisma.event.create({
-        data: {
-          type: 'deal_updated',
-          payload: deal as any,
-        }
-      });
+      await runPipeline(
+        createEvent(
+          EventTypes.DEAL_STAGE_CHANGED,
+          "crm",
+          { dealId: deal.id, stage: deal.stage }
+        )
+      );
 
       res.status(200).json(deal);
     } catch (error) {
