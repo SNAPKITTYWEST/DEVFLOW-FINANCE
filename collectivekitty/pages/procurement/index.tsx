@@ -128,9 +128,11 @@ export default function ProcurementPage() {
         toast.success("VENDOR REGISTERED");
         setShowVendorModal(false);
         fetchData();
+      } else {
+        toast.error("REGISTRATION FAILED");
       }
     } catch (e) {
-      toast.error("VENDOR REGISTRATION FAILED");
+      toast.error("BIFROST CONNECTION ERROR");
     }
   };
 
@@ -242,6 +244,11 @@ export default function ProcurementPage() {
                   <Plus className="w-3 h-3" /> Add Vendor
                 </button>
               )}
+              {activeTab === 'orders' && (
+                <button className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all">
+                  <Plus className="w-3 h-3" /> New Order
+                </button>
+              )}
               {activeTab === 'spend' && (
                 <button onClick={() => setShowSpendModal(true)} className="flex items-center gap-2 bg-purple-600 text-white px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all">
                   <Plus className="w-3 h-3" /> Log Spend
@@ -268,7 +275,7 @@ export default function ProcurementPage() {
           </div>
 
           <div className="flex gap-6 border-b border-zinc-900 mb-6">
-            {['requisitions', 'vendors', 'spend'].map(tab => (
+            {['requisitions', 'vendors', 'orders', 'spend'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${activeTab === tab ? 'text-[#00D4AA]' : 'text-zinc-600 hover:text-zinc-400'}`}>
                 {tab === 'spend' ? 'Spend Intelligence' : tab}
                 {activeTab === tab && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00D4AA]" />}
@@ -340,6 +347,14 @@ export default function ProcurementPage() {
               </div>
             )}
 
+            {activeTab === 'orders' && (
+              <div className="p-20 text-center">
+                 <Truck className="w-12 h-12 text-zinc-800 mx-auto mb-4" />
+                 <h3 className="text-zinc-500 text-xs font-black uppercase tracking-widest">Order Pipeline</h3>
+                 <p className="text-zinc-700 text-[10px] mt-2 font-mono italic">No active purchase orders found in BIFROST.</p>
+              </div>
+            )}
+
             {activeTab === 'spend' && (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -407,7 +422,16 @@ export default function ProcurementPage() {
               <Field label="Vendor Name" name="name" required />
               <Field label="Email Address" name="email" type="email" required />
               <Field label="Phone" name="phone" />
-              <Field label="Category" name="category" placeholder="SaaS / Hardware / Services" />
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 ml-1">Category</label>
+                <select name="category" className="w-full bg-[#050505] border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:border-[#00D4AA] outline-none font-sans">
+                  <option value="Technology">Technology</option>
+                  <option value="Services">Services</option>
+                  <option value="Hardware">Hardware</option>
+                  <option value="Software">Software</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
               <SubmitButton label="Register Entity" />
             </form>
           </Modal>
