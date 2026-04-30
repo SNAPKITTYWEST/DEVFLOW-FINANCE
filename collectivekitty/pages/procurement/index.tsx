@@ -92,9 +92,12 @@ export default function ProcurementPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-[#050505] text-[#00D4AA] flex items-center justify-center font-mono uppercase tracking-widest text-[10px]">
-        Accessing Procurement Sub-module...
-      </div>
+      <main style={{background:"#0a0a0a", minHeight:"100vh",
+      display:"flex", alignItems:"center",
+      justifyContent:"center", color:"#00D4AA",
+      fontFamily:"monospace"}}>
+        Loading Bifrost...
+      </main>
     );
   }
 
