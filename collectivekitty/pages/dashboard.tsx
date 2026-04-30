@@ -20,7 +20,8 @@ import {
   Settings,
   X,
   Clock,
-  Circle
+  Circle,
+  ShoppingCart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -185,6 +186,7 @@ export default function Dashboard() {
           <LayoutGrid className="w-5 h-5 text-[#00D4AA] cursor-pointer" />
           <Activity className="w-5 h-5 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer" onClick={() => router.push('/dashboard')} />
           <FileText className="w-5 h-5 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer" onClick={() => router.push('/crm')} />
+          <ShoppingCart className="w-5 h-5 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer" onClick={() => router.push('/procurement')} />
           <CreditCard className="w-5 h-5 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer" />
           <PieChart className="w-5 h-5 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer" />
           <Settings className="w-5 h-5 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer" />
