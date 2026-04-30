@@ -1,12 +1,15 @@
-import { BifrostEvent } from "../eventContract"
+import { BifrostEvent, EventTypes } from "../contracts/event.schema";
 
 export interface RouteDecision {
-  notify: boolean
-  requiresApproval: boolean
-  escalate: boolean
-  nextAction: string
+  notify: boolean;
+  requiresApproval: boolean;
+  escalate: boolean;
+  nextAction: string;
 }
 
+/**
+ * Routes an event based on its type and calculated risk level.
+ */
 export function routeEvent(
   event: BifrostEvent,
   riskLevel: string
@@ -16,22 +19,24 @@ export function routeEvent(
     requiresApproval: false,
     escalate: false,
     nextAction: "persist"
-  }
+  };
 
+  // High risk triggers automatic escalation
   if (riskLevel === "HIGH" || riskLevel === "CRITICAL") {
-    decisions.notify = true
-    decisions.requiresApproval = true
-    decisions.escalate = true
-    decisions.nextAction = "escalate"
+    decisions.notify = true;
+    decisions.requiresApproval = true;
+    decisions.escalate = true;
+    decisions.nextAction = "escalate";
   }
 
-  if (event.event_type === "requisition.created") {
-    const amount = Number(event.payload.amount || 0)
+  // Business Logic: Procurement Approvals
+  if (event.event_type === EventTypes.PROCUREMENT.REQUISITION_CREATED) {
+    const amount = Number(event.payload.amount || 0);
     if (amount >= 1000) {
-      decisions.requiresApproval = true
-      decisions.nextAction = "pending_approval"
+      decisions.requiresApproval = true;
+      decisions.nextAction = "pending_approval";
     }
   }
 
-  return decisions
+  return decisions;
 }

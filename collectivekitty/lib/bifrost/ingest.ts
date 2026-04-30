@@ -1,7 +1,10 @@
-import { BifrostEvent, createEvent } from "../eventContract"
-import { PrismaClient } from "@prisma/client"
-const prisma = new PrismaClient()
+import { BifrostEvent } from "../contracts/event.schema";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
+/**
+ * Ingests a validated event into the Neon Postgres database.
+ */
 export async function ingestEvent(
   event: BifrostEvent
 ): Promise<string> {
@@ -13,6 +16,6 @@ export async function ingestEvent(
       processed: false,
       createdAt: new Date(event.timestamp)
     }
-  })
-  return record.id
+  });
+  return record.id;
 }

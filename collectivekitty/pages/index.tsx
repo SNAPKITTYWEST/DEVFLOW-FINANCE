@@ -40,7 +40,7 @@ export default function Landing() {
         
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #7C3AED, #00D4AA); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #7000FF, #00D4AA); border-radius: 4px; }
         
         .fade-in {
           opacity: 0;
@@ -59,10 +59,10 @@ export default function Landing() {
         
         @keyframes glow {
           0%, 100% { 
-            box-shadow: 0 0 30px rgba(124, 58, 237, 0.3), 0 0 60px rgba(124, 58, 237, 0.1); 
+            box-shadow: 0 0 30px rgba(112, 0, 255, 0.3), 0 0 60px rgba(112, 0, 255, 0.1);
           }
           50% { 
-            box-shadow: 0 0 50px rgba(124, 58, 237, 0.6), 0 0 100px rgba(0, 212, 170, 0.3); 
+            box-shadow: 0 0 50px rgba(112, 0, 255, 0.6), 0 0 100px rgba(0, 212, 170, 0.3);
           }
         }
         @keyframes scrollBounce {
@@ -86,7 +86,7 @@ export default function Landing() {
         }
         .card-hover:hover {
           transform: translateY(-12px) scale(1.02);
-          box-shadow: 0 30px 60px rgba(124, 58, 237, 0.25), 0 0 40px rgba(124, 58, 237, 0.1);
+          box-shadow: 0 30px 60px rgba(112, 0, 255, 0.25), 0 0 40px rgba(112, 0, 255, 0.1);
         }
         
         .stat-hover {
@@ -97,7 +97,7 @@ export default function Landing() {
         }
         
         .shimmer-text {
-          background: linear-gradient(90deg, #7C3AED 0%, #00D4AA 25%, #7C3AED 50%, #00D4AA 75%, #7C3AED 100%);
+          background: linear-gradient(90deg, #7000FF 0%, #00D4AA 25%, #7000FF 50%, #00D4AA 75%, #7000FF 100%);
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -109,7 +109,7 @@ export default function Landing() {
           transition: color 0.2s ease;
         }
         .nav-link:hover {
-          color: #7C3AED !important;
+          color: #7000FF !important;
         }
         
         @media (max-width: 768px) {
@@ -133,7 +133,7 @@ export default function Landing() {
         zIndex: 1000,
         background: scrollY > 50 ? "rgba(10, 10, 10, 0.95)" : "rgba(10, 10, 10, 0.8)",
         backdropFilter: "blur(20px)",
-        borderBottom: scrollY > 50 ? "1px solid rgba(124, 58, 237, 0.2)" : "1px solid transparent",
+        borderBottom: scrollY > 50 ? "1px solid rgba(112, 0, 255, 0.2)" : "1px solid transparent",
         padding: "1rem 2rem",
         transition: "all 0.3s ease",
         display: "flex",
@@ -153,7 +153,7 @@ export default function Landing() {
             </a>
           ))}
           <a href="/login" style={{
-            background: "linear-gradient(135deg, #7C3AED 0%, #00D4AA 100%)",
+            background: "linear-gradient(135deg, #7000FF 0%, #00D4AA 100%)",
             color: "#000",
             padding: "10px 24px",
             borderRadius: "8px",
@@ -180,7 +180,7 @@ export default function Landing() {
         paddingTop: "120px",
         position: "relative",
         background: `
-          radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+          radial-gradient(ellipse at 20% 50%, rgba(112, 0, 255, 0.12) 0%, transparent 50%),
           radial-gradient(ellipse at 80% 50%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
           #0a0a0a
         `
@@ -193,8 +193,8 @@ export default function Landing() {
           right: 0,
           bottom: 0,
           backgroundImage: `
-            linear-gradient(rgba(124, 58, 237, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(124, 58, 237, 0.03) 1px, transparent 1px)
+            linear-gradient(rgba(112, 0, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(112, 0, 255, 0.03) 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
           pointerEvents: "none"
@@ -237,14 +237,14 @@ export default function Landing() {
         }}>
           CRM. ERP. Procurement. Payments.<br/>
           <span style={{ 
-            color: "#7C3AED", 
+            color: "#7000FF",
             fontFamily: "monospace", 
             fontSize: "0.95rem",
-            background: "rgba(124, 58, 237, 0.1)",
+            background: "rgba(112, 0, 255, 0.1)",
             padding: "4px 12px",
             borderRadius: "4px"
           }}>
-            ∫ Powered by Bifrost Intelligence
+            ∫ Standardized Event Orchestration v1.0
           </span>
         </p>
 
@@ -258,7 +258,7 @@ export default function Landing() {
           zIndex: 1
         }}>
           <a href="/login" style={{
-            background: "linear-gradient(135deg, #7C3AED 0%, #6D28D9 50%, #00D4AA 100%)",
+            background: "linear-gradient(135deg, #7000FF 0%, #6D28D9 50%, #00D4AA 100%)",
             color: "#000",
             padding: "18px 36px",
             borderRadius: "10px",
@@ -267,15 +267,15 @@ export default function Landing() {
             textDecoration: "none",
             transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
             cursor: "pointer",
-            boxShadow: "0 4px 20px rgba(124, 58, 237, 0.4)"
+            boxShadow: "0 4px 20px rgba(112, 0, 255, 0.4)"
           }}
           onMouseOver={(e) => {
             (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(124, 58, 237, 0.6)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(112, 0, 255, 0.6)";
           }}
           onMouseOut={(e) => {
             (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(124, 58, 237, 0.4)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(112, 0, 255, 0.4)";
           }}>
             Deploy to Collective →
           </a>
@@ -286,20 +286,20 @@ export default function Landing() {
             borderRadius: "10px",
             fontWeight: "600",
             fontSize: "1.05rem",
-            border: "2px solid rgba(124, 58, 237, 0.5)",
+            border: "2px solid rgba(112, 0, 255, 0.5)",
             textDecoration: "none",
             transition: "all 0.3s ease",
             cursor: "pointer",
             backdropFilter: "blur(10px)"
           }}
           onMouseOver={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "rgba(124, 58, 237, 0.1)";
-            (e.currentTarget as HTMLElement).style.borderColor = "#7C3AED";
+            (e.currentTarget as HTMLElement).style.background = "rgba(112, 0, 255, 0.1)";
+            (e.currentTarget as HTMLElement).style.borderColor = "#7000FF";
             (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
           }}
           onMouseOut={(e) => {
             (e.currentTarget as HTMLElement).style.background = "rgba(255, 255, 255, 0.05)";
-            (e.currentTarget as HTMLElement).style.borderColor = "rgba(124, 58, 237, 0.5)";
+            (e.currentTarget as HTMLElement).style.borderColor = "rgba(112, 0, 255, 0.5)";
             (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
           }}>
             ▶ Watch Demo
@@ -337,7 +337,7 @@ export default function Landing() {
           bottom: "2rem", 
           left: "50%", 
           transform: "translateX(-50%)",
-          color: "#7C3AED",
+          color: "#7000FF",
           fontSize: "1.5rem",
           opacity: 0.6
         }}>
@@ -349,8 +349,8 @@ export default function Landing() {
       <section style={{ 
         background: "linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%)", 
         padding: "5rem 2rem", 
-        borderTop: "1px solid rgba(124, 58, 237, 0.15)", 
-        borderBottom: "1px solid rgba(124, 58, 237, 0.15)" 
+        borderTop: "1px solid rgba(112, 0, 255, 0.15)",
+        borderBottom: "1px solid rgba(112, 0, 255, 0.15)"
       }}>
         <div className="social-stats fade-in" style={{ 
           display: "flex", 
@@ -397,18 +397,18 @@ export default function Landing() {
         <div className="fade-in" style={{ textAlign: "center", marginBottom: "5rem" }}>
           <div style={{
             display: "inline-block",
-            background: "rgba(124, 58, 237, 0.1)",
-            border: "1px solid rgba(124, 58, 237, 0.3)",
+            background: "rgba(112, 0, 255, 0.1)",
+            border: "1px solid rgba(112, 0, 255, 0.3)",
             borderRadius: "20px",
             padding: "6px 16px",
             marginBottom: "1.5rem",
-            color: "#7C3AED",
+            color: "#7000FF",
             fontFamily: "monospace",
             fontSize: "0.85rem",
             fontWeight: "600",
             letterSpacing: "0.1em"
           }}>
-            ∫ BIFROST BRIDGE
+            ∫ BIFROST PIPELINE
           </div>
           <h2 style={{ 
             fontSize: "3.5rem", 
@@ -417,10 +417,10 @@ export default function Landing() {
             color: "#fff",
             letterSpacing: "-0.02em"
           }}>
-            One Bridge. Every System.
+            Standardized Event Ingestion
           </h2>
           <p style={{ color: "#a1a1aa", fontSize: "1.2rem", maxWidth: "600px", margin: "0 auto", lineHeight: 1.7 }}>
-            Bifrost connects your entire financial ecosystem in real-time with zero latency
+            Every signal across your enterprise is normalized, scored, and routed through a secure 7-stage pipeline.
           </p>
         </div>
 
@@ -433,7 +433,8 @@ export default function Landing() {
         }}>
           {/* Left Column - Sources */}
           <div className="bridge-column" style={{ flex: 1, minWidth: "220px" }}>
-            {["LinkedIn", "Open Collective", "Trailblazer", "Your Bank"].map((item, i) => (
+             <div style={{ color: "#7000FF", fontSize: "0.7rem", fontWeight: "900", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "1rem", marginLeft: "0.5rem" }}>Ingress Sources</div>
+            {["CRM Events", "Supply Chain", "Bank Feeds", "Manual Logs"].map((item, i) => (
               <div key={i} className="card-hover" style={{
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(255,255,255,0.06)",
@@ -444,21 +445,13 @@ export default function Landing() {
                 cursor: "pointer",
                 position: "relative",
                 overflow: "hidden"
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.5)";
-                e.currentTarget.style.background = "rgba(124, 58, 237, 0.05)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-                e.currentTarget.style.background = "rgba(255,255,255,0.02)";
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <div style={{
                     width: "8px",
                     height: "8px",
                     borderRadius: "50%",
-                    background: "#7C3AED",
+                    background: "#7000FF",
                     opacity: 0.6
                   }} />
                   <span style={{ color: "#fff", fontWeight: "500" }}>{item}</span>
@@ -467,50 +460,41 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Center - BIFROST ∞ */}
-          <div style={{ flex: "0 0 auto", padding: "2rem" }}>
+          {/* Center - BIFROST PIPELINE */}
+          <div style={{ flex: "1", padding: "1rem", minWidth: "300px" }}>
             <div className="glow" style={{
-              background: "linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(0, 212, 170, 0.1) 100%)",
-              border: "2px solid rgba(124, 58, 237, 0.5)",
+              background: "linear-gradient(180deg, rgba(112, 0, 255, 0.05) 0%, rgba(10, 10, 10, 1) 100%)",
+              border: "1px solid rgba(112, 0, 255, 0.3)",
               borderRadius: "20px",
-              padding: "3rem 4rem",
-              textAlign: "center",
+              padding: "2rem",
+              textAlign: "left",
               position: "relative"
             }}>
-              <div style={{ 
-                fontSize: "2.5rem", 
-                fontWeight: "800", 
-                color: "#7C3AED",
-                fontFamily: "monospace",
-                letterSpacing: "0.3em",
-                marginBottom: "0.5rem"
-              }}>
-                BIFROST
-              </div>
-              <div style={{ 
-                fontSize: "5rem", 
-                color: "#7C3AED",
-                fontWeight: "300",
-                lineHeight: 1,
-                opacity: 0.8
-              }}>
-                ∞
-              </div>
-              <div style={{ 
-                marginTop: "1rem",
-                color: "#00D4AA",
-                fontSize: "0.85rem",
-                fontFamily: "monospace",
-                letterSpacing: "0.1em"
-              }}>
-                REAL-TIME SYNC
-              </div>
+              <div style={{ color: "#7000FF", fontSize: "0.6rem", fontWeight: "900", letterSpacing: "0.3em", marginBottom: "1.5rem" }}>PIPELINE STAGES</div>
+              {[
+                { s: "01", label: "VALIDATE", desc: "Contract schema check" },
+                { s: "02", label: "INGEST", desc: "Persistence in Neon Postgres" },
+                { s: "03", label: "SCORE", desc: "Risk & logic engine" },
+                { s: "04", label: "ROUTE", desc: "Decision orchestration" },
+                { s: "05", label: "PERSIST", desc: "State outcome commitment" },
+                { s: "06", label: "NOTIFY", desc: "Real-time alerts & webhooks" },
+                { s: "07", label: "AUDIT", desc: "Immutable trail logging" }
+              ].map((step, i) => (
+                <div key={i} style={{ display: "flex", gap: "1rem", marginBottom: "0.8rem", alignItems: "center" }}>
+                   <span style={{ color: "#7000FF", fontSize: "0.7rem", fontWeight: "900", fontFamily: "monospace" }}>{step.s}</span>
+                   <div>
+                      <div style={{ color: "#fff", fontSize: "0.8rem", fontWeight: "800", letterSpacing: "0.05em" }}>{step.label}</div>
+                      <div style={{ color: "#52525b", fontSize: "0.65rem" }}>{step.desc}</div>
+                   </div>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Right Column - Outputs */}
           <div className="bridge-column" style={{ flex: 1, minWidth: "220px" }}>
-            {["CRM Pipeline", "Spend Intelligence", "Procurement", "Revenue Recognition"].map((item, i) => (
+            <div style={{ color: "#00D4AA", fontSize: "0.7rem", fontWeight: "900", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "1rem", marginLeft: "0.5rem" }}>Downstream Actions</div>
+            {["Notify Admin", "Escalate Risk", "Ledger Entry", "Approval Request"].map((item, i) => (
               <div key={i} className="card-hover" style={{
                 background: "rgba(0, 212, 170, 0.03)",
                 border: "1px solid rgba(0, 212, 170, 0.1)",
@@ -519,14 +503,6 @@ export default function Landing() {
                 marginBottom: "1rem",
                 transition: "all 0.3s ease",
                 cursor: "pointer"
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = "rgba(0, 212, 170, 0.5)";
-                e.currentTarget.style.background = "rgba(0, 212, 170, 0.06)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = "rgba(0, 212, 170, 0.1)";
-                e.currentTarget.style.background = "rgba(0, 212, 170, 0.03)";
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <div style={{
@@ -548,18 +524,18 @@ export default function Landing() {
       <section style={{ 
         padding: "8rem 2rem", 
         background: "linear-gradient(180deg, #0a0a0a 0%, #111 100%)",
-        borderTop: "1px solid rgba(124, 58, 237, 0.1)"
+        borderTop: "1px solid rgba(112, 0, 255, 0.1)"
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <div className="fade-in" style={{ textAlign: "center", marginBottom: "5rem" }}>
             <div style={{
               display: "inline-block",
-              background: "rgba(124, 58, 237, 0.1)",
-              border: "1px solid rgba(124, 58, 237, 0.3)",
+              background: "rgba(112, 0, 255, 0.1)",
+              border: "1px solid rgba(112, 0, 255, 0.3)",
               borderRadius: "20px",
               padding: "6px 16px",
               marginBottom: "1.5rem",
-              color: "#7C3AED",
+              color: "#7000FF",
               fontFamily: "monospace",
               fontSize: "0.85rem",
               fontWeight: "600",
@@ -589,9 +565,9 @@ export default function Landing() {
             {[
               {
                 icon: "∞",
-                title: "CRM Intelligence",
-                desc: "Track every opportunity from first contact to closed deal. Kanban pipeline with Bifrost scoring and predictive analytics.",
-                gradient: "linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)"
+                title: "Event Orchestration",
+                desc: "Every interaction is an event, normalized by a standard contract and processed through our 7-stage Bifrost pipeline.",
+                gradient: "linear-gradient(135deg, #7000FF 0%, #6D28D9 100%)"
               },
               {
                 icon: "$",
@@ -603,7 +579,7 @@ export default function Landing() {
                 icon: "⚡",
                 title: "Financial OS",
                 desc: "General ledger. Invoicing. Bank reconciliation. Revenue recognition. All connected in real-time.",
-                gradient: "linear-gradient(135deg, #7C3AED 0%, #00D4AA 100%)"
+                gradient: "linear-gradient(135deg, #7000FF 0%, #00D4AA 100%)"
               }
             ].map((card, i) => (
               <div key={i} className="card-hover" style={{
@@ -665,7 +641,7 @@ export default function Landing() {
             Track grants, manage contributors, recognize revenue automatically with full audit trails.
           </p>
           <a href="/dashboard" style={{
-            background: "linear-gradient(135deg, #7C3AED 0%, #00D4AA 100%)",
+            background: "linear-gradient(135deg, #7000FF 0%, #00D4AA 100%)",
             color: "#000",
             padding: "16px 32px",
             borderRadius: "10px",
@@ -674,15 +650,15 @@ export default function Landing() {
             textDecoration: "none",
             display: "inline-block",
             transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-            boxShadow: "0 4px 20px rgba(124, 58, 237, 0.4)"
+            boxShadow: "0 4px 20px rgba(112, 0, 255, 0.4)"
           }}
           onMouseOver={(e) => {
             (e.currentTarget as HTMLElement).style.transform = "scale(1.05) translateY(-2px)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(124, 58, 237, 0.6)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 30px rgba(112, 0, 255, 0.6)";
           }}
           onMouseOut={(e) => {
             (e.currentTarget as HTMLElement).style.transform = "scale(1) translateY(0)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(124, 58, 237, 0.4)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(112, 0, 255, 0.4)";
           }}>
             Learn about Bifrost →
           </a>
@@ -693,7 +669,7 @@ export default function Landing() {
       <section style={{ 
         padding: "8rem 2rem", 
         background: "linear-gradient(180deg, #111 0%, #0a0a0a 100%)",
-        borderTop: "1px solid rgba(124, 58, 237, 0.1)"
+        borderTop: "1px solid rgba(112, 0, 255, 0.1)"
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <div className="fade-in" style={{ textAlign: "center", marginBottom: "4rem" }}>
@@ -709,7 +685,7 @@ export default function Landing() {
             {/* For Freelancers */}
             <div className="card-hover" style={{
               background: "linear-gradient(135deg, #111 0%, #0a0a0a 100%)",
-              borderLeft: "4px solid #7C3AED",
+              borderLeft: "4px solid #7000FF",
               borderRadius: "16px",
               padding: "3rem",
               transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
@@ -740,7 +716,7 @@ export default function Landing() {
                     <span style={{ 
                       position: "absolute", 
                       left: 0, 
-                      color: "#7C3AED",
+                      color: "#7000FF",
                       fontWeight: "bold",
                       fontSize: "1.2rem"
                     }}>▸</span>
@@ -799,7 +775,7 @@ export default function Landing() {
 
       {/* SECTION 7 - FINAL CTA BANNER */}
       <section style={{ 
-        background: "linear-gradient(135deg, #7C3AED 0%, #6D28D9 50%, #00D4AA 100%)",
+        background: "linear-gradient(135deg, #7000FF 0%, #6D28D9 50%, #00D4AA 100%)",
         padding: "8rem 2rem",
         textAlign: "center",
         position: "relative",
@@ -953,7 +929,7 @@ export default function Landing() {
                   textDecoration: "none", 
                   fontSize: "0.8rem" 
                 }}
-                onMouseOver={(e) => (e.currentTarget as HTMLElement).style.color = "#7C3AED"}
+                onMouseOver={(e) => (e.currentTarget as HTMLElement).style.color = "#7000FF"}
                 onMouseOut={(e) => (e.currentTarget as HTMLElement).style.color = "#52525b"}>
                   {link}
                 </a>
