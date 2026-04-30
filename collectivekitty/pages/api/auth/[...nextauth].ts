@@ -9,15 +9,18 @@ export default NextAuth({
       tenantId: process.env.AZURE_AD_TENANT_ID!,
     })
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.sub
-      }
       return session
+    },
+    async jwt({ token, account }) {
+      return token
     }
   },
   pages: {
-    signIn: '/login'
-  }
+    signIn: "/login",
+    error: "/login"
+  },
+  debug: false
 })
