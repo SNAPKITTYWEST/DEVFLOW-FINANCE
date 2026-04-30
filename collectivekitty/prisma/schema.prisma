@@ -46,3 +46,92 @@ model Event {
   userId    String?
   createdAt DateTime @default(now())
 }
+
+model Vendor {
+  id           String          @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  website      String?
+  category     String?
+  status       String          @default("active")
+  rating       Float?
+  totalSpend   Float           @default(0)
+  createdAt    DateTime        @default(now())
+  orders       PurchaseOrder[]
+}
+
+model PurchaseRequisition {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  amount        Float
+  currency      String    @default("USD")
+  status        String    @default("draft")
+  priority      String    @default("normal")
+  requestedBy   String
+  approvedBy    String?
+  rejectedBy    String?
+  rejectionNote String?
+  neededBy      DateTime?
+  projectId     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  order         PurchaseOrder?
+}
+
+model PurchaseOrder {
+  id            String              @id @default(cuid())
+  poNumber      String              @unique
+  vendorId      String
+  vendor        Vendor              @relation(fields: [vendorId], references: [id])
+  requisitionId String?             @unique
+  requisition   PurchaseRequisition? @relation(fields: [requisitionId], references: [id])
+  status        String              @default("draft")
+  totalAmount   Float
+  currency      String              @default("USD")
+  lineItems     POLineItem[]
+  issuedAt      DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+model POLineItem {
+  id          String        @id @default(cuid())
+  poId        String
+  po          PurchaseOrder @relation(fields: [poId], references: [id])
+  description String
+  quantity    Float
+  unitPrice   Float
+  total       Float
+  category    String?
+}
+
+model SpendTransaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  currency    String   @default("USD")
+  vendor      String
+  category    String?
+  description String?
+  projectId   String?
+  dealId      String?
+  status      String   @default("pending")
+  poId        String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+}
+
+model BifrostEvent {
+  id          String   @id @default(cuid())
+  source      String
+  eventType   String
+  payload     Json
+  processed   Boolean  @default(false)
+  riskScore   Float?
+  flags       Json?
+  agentTrace  Json?
+  createdAt   DateTime @default(now())
+  @@index([source, eventType])
+  @@index([processed])
+}
