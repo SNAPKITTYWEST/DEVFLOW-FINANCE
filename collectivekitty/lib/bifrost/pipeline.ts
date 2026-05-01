@@ -12,7 +12,7 @@ import { logger } from "../observability/logger";
  * Validate -> Ingest -> Score -> Route -> Persist -> Notify -> Audit
  */
 export async function runPipeline(event: BifrostEvent) {
-  const trace: any[] = [];
+  const trace: { stage: string; status: string; [key: string]: unknown }[] = [];
   const traceId = event.trace_id;
 
   try {
@@ -42,11 +42,12 @@ export async function runPipeline(event: BifrostEvent) {
       // Fallback to TypeScript scoring if ML service down
       const { score, level, flags } = scoreEvent(event.payload)
       scoreResult = { 
-        trace_id: event.trace_id,
-        score, level, flags, 
+        score,
+        level,
+        flags,
         confidence: 0.7,
         timestamp: new Date().toISOString()
-      }
+      } as any
       trace.push({ 
         stage: "score", 
         status: "ok", 
