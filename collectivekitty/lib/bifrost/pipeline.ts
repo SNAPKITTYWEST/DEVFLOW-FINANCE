@@ -62,7 +62,7 @@ export async function runPipeline(event: BifrostEvent) {
       })
     }
 
-    const { score, level, flags } = scoreResult
+    const { score, level, flags } = scoreResult!
     logger.event(traceId, "score", "ok", { score, level });
 
     // Stage 4: Route
