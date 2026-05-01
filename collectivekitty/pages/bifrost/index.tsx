@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Donut
+  PieChart, Pie, Cell
 } from "recharts";
 
 // Status indicator component
@@ -96,17 +96,17 @@ function FlagTag({ flag }: { flag: string }) {
 
 export default function BifrostWarRoom() {
   const [healthStatus, setHealthStatus] = useState({
-    bifrost: "loading" as const,
-    ml: "loading" as const,
-    db: "loading" as const,
-    events: "loading" as const
+    bifrost: "loading" as "ok" | "error" | "loading",
+    ml: "loading" as "ok" | "error" | "loading",
+    db: "loading" as "ok" | "error" | "loading",
+    events: "loading" as "ok" | "error" | "loading"
   });
   
   const [events, setEvents] = useState<any[]>([]);
   const [stages, setStages] = useState<any[]>([]);
   const [riskDist, setRiskDist] = useState<any[]>([]);
   const [retries, setRetries] = useState<any[]>([]);
-  const pollRef = useRef<NodeJS.Timeout>();
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   // Health check
   const checkHealth = async () => {
