@@ -1,4 +1,3 @@
-import { BifrostEvent } from "../lib/contracts/event.schema";
 import { createBifrostEvent } from "../lib/contracts/factory";
 import { runPipeline } from "../lib/bifrost/pipeline";
 import { logger } from "../lib/observability/logger";
@@ -13,7 +12,7 @@ export abstract class BaseConnector {
   /**
    * Process an incoming raw event and route it through the pipeline.
    */
-  protected async emit(type: string, payload: Record<string, any>) {
+  protected async emit(type: string, payload: Record<string, unknown>) {
     logger.info(`[Connector:${this.name}] Emitting event: ${type}`);
 
     const event = createBifrostEvent(type, this.name, payload);
@@ -37,5 +36,5 @@ export abstract class BaseConnector {
   /**
    * Abstract method for handling webhooks or manual syncs.
    */
-  abstract handleSignal(type: string, data: any): Promise<any>;
+  abstract handleSignal(type: string, data: unknown): Promise<unknown>;
 }
