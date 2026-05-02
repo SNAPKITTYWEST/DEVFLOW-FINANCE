@@ -8,7 +8,10 @@ export interface RouteDecision {
 }
 
 /**
- * Routes an event based on its type and calculated risk level.
+ * Determines routing destination for scored events.
+ * @failure Unknown input → routes to DEFAULT_REVIEW queue
+ * @failure No event is dropped
+ * @failure Human review triggered automatically
  */
 export function routeEvent(
   event: BifrostEvent,
@@ -30,7 +33,7 @@ export function routeEvent(
   }
 
   // Business Logic: Procurement Approvals
-  if (event.event_type === EventTypes.PROCUREMENT.REQUISITION_CREATED) {
+  if (event.event_type === EventTypes.REQUISITION_CREATED) {
     const amount = Number(event.payload.amount || 0);
     if (amount >= 1000) {
       decisions.requiresApproval = true;

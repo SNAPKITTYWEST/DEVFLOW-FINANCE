@@ -12,6 +12,13 @@ export async function getAuditTrail(
   })
 }
 
+/**
+ * Creates immutable append-only audit record.
+ * @failure DB write fails → emergency log to backup store
+ * @failure Audit failure triggers P0 alert
+ * @failure This is LAST stage — never blocks pipeline
+ * @failure No audit record = system violation
+ */
 export async function markProcessed(
   eventId: string,
   riskScore: number,

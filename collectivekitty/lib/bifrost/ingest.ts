@@ -3,7 +3,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 /**
- * Ingests a validated event into the Neon Postgres database.
+ * Receives and persists raw events.
+ * @failure DB write fails → throws INTAKE_FAILED error
+ * @failure Retry queue activated automatically
+ * @failure Pipeline halts — no partial processing
  */
 export async function ingestEvent(
   event: BifrostEvent

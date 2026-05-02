@@ -1,10 +1,43 @@
+import { callMLService } from "../services/mlService"
+import { BifrostEvent } from "../contracts/event.schema"
+
 export interface ScoreResult {
   score: number
   level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
   flags: string[]
+  confidence?: number
 }
 
-export function scoreEvent(
+/**
+ * Calculates risk score via ML service with TS fallback.
+ * @failure ML service down → automatic fallback to TS rules
+ * @failure Score is NEVER null — fallback always succeeds
+ * @failure Pipeline never halts due to scoring failure
+ */
+export async function scoreEvent(
+  event: BifrostEvent
+): Promise<ScoreResult> {
+  const mlResult = await callMLService({
+    event_type: event.event_type,
+    source: event.source,
+    payload: event.payload as Record<string, unknown>,
+    trace_id: event.trace_id
+  })
+
+  if (mlResult) {
+    return {
+      score: mlResult.score,
+      level: mlResult.level,
+      flags: mlResult.flags,
+      confidence: mlResult.confidence
+    }
+  }
+
+  // Fallback to TS rules
+  return scoreRules(event.payload as Record<string, unknown>)
+}
+
+export function scoreRules(
   payload: Record<string, unknown>
 ): ScoreResult {
   let score = 0
