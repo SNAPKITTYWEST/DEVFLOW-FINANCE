@@ -123,15 +123,18 @@ model SpendTransaction {
 }
 
 model BifrostEvent {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   source      String
   eventType   String
   payload     Json
-  processed   Boolean  @default(false)
+  processed   Boolean   @default(false)
   riskScore   Float?
   flags       Json?
   agentTrace  Json?
-  createdAt   DateTime @default(now())
+  retryCount  Int       @default(0)
+  lastError   String?
+  nextRetryAt DateTime?
+  createdAt   DateTime  @default(now())
   @@index([source, eventType])
   @@index([processed])
 }

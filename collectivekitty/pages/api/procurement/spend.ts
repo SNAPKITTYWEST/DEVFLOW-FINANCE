@@ -30,7 +30,7 @@ export default async function handler(
     // Pipeline event
     await runPipeline(
       createEvent(
-        EventTypes.SPEND_LOGGED,
+          EventTypes.SPEND.SPEND_LOGGED,
         "procurement",
         { txId: tx.id, amount: tx.amount, vendor: tx.vendor, category: tx.category }
       )

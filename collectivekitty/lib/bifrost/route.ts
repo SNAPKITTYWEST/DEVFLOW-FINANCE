@@ -33,7 +33,7 @@ export function routeEvent(
   }
 
   // Business Logic: Procurement Approvals
-  if (event.event_type === EventTypes.REQUISITION_CREATED) {
+  if (event.event_type === EventTypes.PROCUREMENT.REQUISITION_CREATED) {
     const amount = Number(event.payload.amount || 0);
     if (amount >= 1000) {
       decisions.requiresApproval = true;

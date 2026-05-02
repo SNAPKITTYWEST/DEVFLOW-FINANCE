@@ -6,7 +6,7 @@ import { BifrostEvent, BIFROST_VERSION } from "./event.schema";
 export function createBifrostEvent(
   type: string,
   source: string,
-  payload: Record<string, any>
+  payload: Record<string, unknown>
 ): BifrostEvent {
   return {
     event_type: type,

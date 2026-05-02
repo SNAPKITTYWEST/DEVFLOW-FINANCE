@@ -35,9 +35,9 @@ export default function Dashboard() {
   const [isHealthy, setIsHealthy] = useState(true);
 
   // Data states
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Record<string, unknown>[]>([]);
   const [metrics, setMetrics] = useState({ contracts: 0, invoices: 0, payments: 0, recognized: 0 });
-  const [alerts, setAlerts] = useState({ count: 0, items: [] });
+  const [alerts, setAlerts] = useState<{ count: number; items: Record<string, unknown>[] }>({ count: 0, items: [] });
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -296,10 +296,10 @@ export default function Dashboard() {
                 <div className="flex-1 flex flex-col items-center justify-center py-10 px-6">
                    {alerts.count > 0 ? (
                      <div className="w-full space-y-2">
-                        {alerts.items.map((alert: any) => (
-                           <div key={alert.id} className="flex items-center gap-4 p-3 bg-red-500/5 border border-red-500/10 rounded-lg">
+                        {alerts.items.map((alert: Record<string, unknown>) => (
+                           <div key={String(alert.id || "")} className="flex items-center gap-4 p-3 bg-red-500/5 border border-red-500/10 rounded-lg">
                               <AlertTriangle className="w-4 h-4 text-red-500" />
-                              <span className="text-xs font-bold uppercase tracking-tight text-red-200">{alert.title}</span>
+                              <span className="text-xs font-bold uppercase tracking-tight text-red-200">{String(alert.title || "")}</span>
                            </div>
                         ))}
                      </div>
@@ -378,8 +378,8 @@ export default function Dashboard() {
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                   {events.length > 0 ? (
                     <div className="divide-y divide-zinc-900">
-                      {events.map((event: any) => (
-                        <div key={event.id} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                      {events.map((event: Record<string, unknown>) => (
+                        <div key={String(event.id || "")} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                           <div className="flex items-center gap-4">
                              <div className="w-8 h-8 rounded bg-[#111] flex items-center justify-center">
                                {event.type === 'sync' && <RefreshCw className="w-3.5 h-3.5 text-blue-500" />}
@@ -388,8 +388,8 @@ export default function Dashboard() {
                                {event.type === 'alert' && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
                              </div>
                              <div>
-                               <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-tight">{event.description}</p>
-                               <p className="text-[9px] text-zinc-600 font-mono">{new Date(event.timestamp).toLocaleTimeString()}</p>
+                               <p className="text-[11px] font-bold text-zinc-300 uppercase tracking-tight">{String(event.description || "")}</p>
+                               <p className="text-[9px] text-zinc-600 font-mono">{new Date(String(event.timestamp || "")).toLocaleTimeString()}</p>
                              </div>
                           </div>
                           <div className="w-1.5 h-1.5 rounded-full bg-[#00D4AA]/50" />

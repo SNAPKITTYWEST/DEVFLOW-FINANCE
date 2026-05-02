@@ -24,7 +24,7 @@ export default async function handler(
     // Pipeline event
     await runPipeline(
       createEvent(
-        EventTypes.VENDOR_ADDED,
+          EventTypes.PROCUREMENT.VENDOR_ADDED,
         "procurement",
         { vendorId: vendor.id, name: vendor.name, category: vendor.category }
       )

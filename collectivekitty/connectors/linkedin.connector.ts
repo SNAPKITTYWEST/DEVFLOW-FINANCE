@@ -6,12 +6,12 @@ import { runPipeline } from "../lib/bifrost/pipeline";
  * Captures lead generation and engagement signals
  */
 
-export async function handleLinkedInSignal(type: string, data: any) {
+export async function handleLinkedInSignal(type: string, data: Record<string, unknown>) {
   let eventType = "";
 
   switch (type) {
-    case "lead_gen":
-      eventType = EventTypes.DEAL_CREATED;
+      case "lead_gen":
+      eventType = EventTypes.CRM.DEAL_CREATED;
       break;
     case "engagement_high":
       eventType = "marketing.engagement_spike"; // Extension of event types
@@ -24,9 +24,9 @@ export async function handleLinkedInSignal(type: string, data: any) {
     eventType,
     "linkedin",
     {
-      lead_id: data.id,
-      campaign: data.campaign_name,
-      contact: data.email,
+      lead_id: String(data.id || ""),
+      campaign: String(data.campaign_name || ""),
+      contact: String(data.email || ""),
       score_bonus: 5,
       raw: data
     }

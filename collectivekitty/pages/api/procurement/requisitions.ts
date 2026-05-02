@@ -35,7 +35,7 @@ export default async function handler(
 
     await runPipeline(
       createEvent(
-        EventTypes.REQUISITION_CREATED,
+          EventTypes.PROCUREMENT.REQUISITION_CREATED,
         "procurement",
         { prId: pr.id, amount: pr.amount, priority: pr.priority, autoApproved: status === "approved" }
       )

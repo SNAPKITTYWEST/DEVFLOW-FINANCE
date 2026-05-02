@@ -13,8 +13,7 @@ export default function Login() {
           Sign in to your workspace
         </p>
         <button
-          onClick={() => signIn("azure-ad",
-            { callbackUrl: "/dashboard" })}
+          onClick={() => signIn("azure-ad", { callbackUrl: "/dashboard" })}
           className="block w-full bg-teal-400 text-black
           py-3 rounded-lg font-bold hover:bg-teal-300">
           Sign in with Microsoft

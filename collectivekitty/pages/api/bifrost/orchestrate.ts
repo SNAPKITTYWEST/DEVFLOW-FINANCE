@@ -15,7 +15,7 @@ export default async function handler(
 
     // In the new architecture, orchestration is handled by the pipeline
     const event = createEvent(
-      EventTypes.BIFROST_INGESTED,
+      EventTypes.SYSTEM.BIFROST_INGESTED,
       source || "manual",
       { input, manual_trigger: true }
     )

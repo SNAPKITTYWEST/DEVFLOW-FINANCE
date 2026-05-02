@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Pipeline event
       await runPipeline(
         createEvent(
-          EventTypes.DEAL_CREATED,
+          EventTypes.CRM.DEAL_CREATED,
           "crm",
           { dealId: deal.id, amount: deal.value, company: deal.company }
         )
@@ -51,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await runPipeline(
         createEvent(
-          EventTypes.DEAL_STAGE_CHANGED,
+          EventTypes.CRM.DEAL_STAGE_CHANGED,
           "crm",
           { dealId: deal.id, stage: deal.stage }
         )
