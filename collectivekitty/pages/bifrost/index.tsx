@@ -572,9 +572,9 @@ if (existing) return {
         <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
           <span style={{ color: "#a1a1aa", fontSize: "0.9rem" }}>Event Type:</span>
           {[
-            { key: "invoice", label: "Invoice Created", amount: 12500 },
-            { key: "deal", label: "Deal Closed", amount: 0 },
-            { key: "vendor", label: "Vendor Payment", amount: 5000 }
+            { key: "invoice" as const, label: "Invoice Created", amount: 12500 },
+            { key: "deal" as const, label: "Deal Closed", amount: 0 },
+            { key: "vendor" as const, label: "Vendor Payment", amount: 5000 }
           ].map(btn => (
             <button
               key={btn.key}
