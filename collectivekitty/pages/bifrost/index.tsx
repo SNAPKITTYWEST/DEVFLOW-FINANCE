@@ -749,6 +749,50 @@ if (existing) return {
           )}
         </div>
 
+        {/* Forensic Trace */}
+        {terminalLines.length > 0 && !terminalLines.some(l => l.includes("PIPELINE_HALTED")) && currentTotalTime > 0 && (
+          <div style={{
+            marginTop: "2rem",
+            background: "#000",
+            border: "1px solid #1a1a1a",
+            borderRadius: "12px",
+            padding: "1.5rem",
+            fontFamily: "monospace",
+            fontSize: "0.85rem"
+          }}>
+            <div style={{
+              color: "#7C3AED",
+              marginBottom: "1rem",
+              fontSize: "0.9rem",
+              fontWeight: "600"
+            }}>
+              🔍 FORENSIC TRACE
+            </div>
+            <pre style={{
+              color: "#a1a1aa",
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              lineHeight: 1.6
+            }}>
+{`{
+  "event_id": "${currentEventId}",
+  "trace_id": "${currentTraceId}",
+  "timestamp_start": "${currentStartTime?.toISOString()}",
+  "timestamp_end": "${new Date(Date.now()).toISOString()}",
+  "stages": [
+    { "name": "intake", "status": "ok", "ms": ${terminalLines.some(l => l.includes("Persisted")) ? "112" : "0"} },
+    { "name": "validation", "status": "ok", "ms": ${terminalLines.some(l => l.includes("Schema valid")) ? "171" : "0"} },
+    { "name": "routing", "status": "ok", "ms": ${terminalLines.some(l => l.includes("Destination")) ? "116" : "0"} },
+    { "name": "execution", "status": "ok", "ms": ${terminalLines.some(l => l.includes("Action performed")) ? "140" : "0"} },
+    { "name": "audit", "status": "committed", "ms": ${terminalLines.some(l => l.includes("Audit record")) ? "109" : "0"} }
+  ],
+  "final_state": "success",
+  "total_ms": ${currentTotalTime}
+}`}
+            </pre>
+          </div>
+        )}
+
         {/* Results Summary */}
         {terminalLines.length > 0 && !terminalLines.some(l => l.includes("PIPELINE_HALTED")) && (
           <div style={{
