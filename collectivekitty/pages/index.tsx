@@ -478,7 +478,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <div style={{ maxWidth: "1400px", margin: "4rem auto 0", pt: "4rem", borderTop: "1px solid #111", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ maxWidth: "1400px", margin: "4rem auto 0", paddingTop: "4rem", borderTop: "1px solid #111", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p className="zinc-600" style={{ fontSize: "0.8rem", fontWeight: "500" }}>© 2026 SnapKitty Collective. Built in public for a sovereign future.</p>
           <div style={{ display: "flex", gap: "1rem", alignItems: "center", color: "#2DD4BF", fontSize: "0.8rem", fontWeight: "700" }}>
             <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2DD4BF" }}></span>
