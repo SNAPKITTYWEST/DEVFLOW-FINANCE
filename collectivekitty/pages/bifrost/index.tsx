@@ -1,606 +1,441 @@
-import { useState, useEffect, useRef } from "react";
+import React from "react";
+import Head from "next/head";
+import Link from "next/link";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
-} from "recharts";
+  Shield,
+  Activity,
+  Cpu,
+  Code,
+  FileJson,
+  RefreshCcw,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  ChevronRight,
+  Database
+} from "lucide-react";
 
-// Status indicator component
-function StatusLight({ label, status, note }: { label: string, status: "ok" | "error" | "loading", note?: string }) {
-  const color = status === "ok" ? "#00D4AA" : status === "error" ? "#EF4444" : "#F59E0B";
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem" }}>
-      <div style={{
-        width: "12px",
-        height: "12px",
-        borderRadius: "50%",
-        background: color,
-        boxShadow: status === "ok" ? "0 0 12px rgba(0, 212, 170, 0.6)" : status === "error" ? "0 0 12px rgba(239, 68, 68, 0.6)" : "0 0 12px rgba(245, 158, 11, 0.6)",
-        animation: status === "loading" ? "pulse 1.5s ease-in-out infinite" : "none"
-      }} />
-      <div>
-        <div style={{ color: "#fff", fontSize: "0.9rem", fontWeight: 600 }}>{label}</div>
-        {note && <div style={{ color: "#71717a", fontSize: "0.75rem" }}>{note}</div>}
-      </div>
-    </div>
-  );
-}
-
-// Event type badge colors
-const eventTypeColors: Record<string, string> = {
-  "crm": "#7C3AED",
-  "stripe": "#00D4AA",
-  "opencollective": "#F59E0B",
-  "plaid": "#3B82F6",
-  "quickbooks": "#10B981",
-  "bifrost": "#8B5CF6"
-};
-
-function EventTypeBadge({ type }: { type: string }) {
-  const source = type.split(".")[0] || "bifrost";
-  const color = eventTypeColors[source] || "#71717a";
-  return (
-    <span style={{
-      background: `${color}20`,
-      color: color,
-      padding: "2px 8px",
-      borderRadius: "4px",
-      fontSize: "0.75rem",
-      fontWeight: 600,
-      fontFamily: "monospace",
-      border: `1px solid ${color}40`
-    }}>
-      {type}
-    </span>
-  );
-}
-
-// Score pill component
-function ScorePill({ level }: { level: string }) {
-  const colors: Record<string, string> = {
-    "LOW": "#00D4AA",
-    "MEDIUM": "#F59E0B",
-    "HIGH": "#F97316",
-    "CRITICAL": "#EF4444"
-  };
-  const color = colors[level] || "#71717a";
-  return (
-    <span style={{
-      background: `${color}20`,
-      color: color,
-      padding: "2px 8px",
-      borderRadius: "12px",
-      fontSize: "0.75rem",
-      fontWeight: 700,
-      border: `1px solid ${color}40`
-    }}>
-      {level}
-    </span>
-  );
-}
-
-// Flag tag
-function FlagTag({ flag }: { flag: string }) {
-  return (
-    <span style={{
-      background: "rgba(124, 58, 237, 0.1)",
-      color: "#a78bfa",
-      padding: "1px 6px",
-      borderRadius: "3px",
-      fontSize: "0.65rem",
-      fontFamily: "monospace"
-    }}>
-      {flag}
-    </span>
-  );
-}
-
-export default function BifrostWarRoom() {
-  const [healthStatus, setHealthStatus] = useState({
-    bifrost: "loading" as "ok" | "error" | "loading",
-    ml: "loading" as "ok" | "error" | "loading",
-    db: "loading" as "ok" | "error" | "loading",
-    events: "loading" as "ok" | "error" | "loading"
-  });
-  
-  const [events, setEvents] = useState<any[]>([]);
-  const [stages, setStages] = useState<any[]>([]);
-  const [riskDist, setRiskDist] = useState<any[]>([]);
-  const [retries, setRetries] = useState<any[]>([]);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Health check
-  const checkHealth = async () => {
-    const newStatus = { ...healthStatus };
-    
-    try {
-      const res = await fetch("/api/bifrost/health", { signal: AbortSignal.timeout(3000) });
-      newStatus.bifrost = res.ok ? "ok" : "error";
-    } catch { newStatus.bifrost = "error"; }
-
-    try {
-      const mlUrl = process.env.ML_SERVICE_URL || "http://localhost:8001";
-      const res = await fetch(`${mlUrl}/health`, { signal: AbortSignal.timeout(3000) });
-      newStatus.ml = res.ok ? "ok" : "error";
-    } catch { newStatus.ml = "error"; }
-
-    // Check DB via audit endpoint
-    try {
-      const res = await fetch("/api/bifrost/audit?limit=1", { signal: AbortSignal.timeout(3000) });
-      newStatus.db = res.ok ? "ok" : "error";
-    } catch { newStatus.db = "error"; }
-
-    // Check if events flowing
-    newStatus.events = events.length > 0 ? "ok" : "loading";
-
-    setHealthStatus(newStatus);
-  };
-
-  // Fetch data
-  const fetchData = async () => {
-    try {
-      const [auditRes, stagesRes, retriesRes] = await Promise.all([
-        fetch("/api/bifrost/audit?limit=20"),
-        fetch("/api/bifrost/stages"),
-        fetch("/api/bifrost/retries")
-      ]);
-
-      if (auditRes.ok) {
-        const auditData = await auditRes.json();
-        setEvents(auditData.data || []);
-        if (auditData.data?.length > 0) {
-          setHealthStatus(prev => ({ ...prev, events: "ok" }));
-        }
-      }
-
-      if (stagesRes.ok) {
-        const stagesData = await stagesRes.json();
-        setStages(stagesData.data || []);
-      }
-
-      if (retriesRes.ok) {
-        const retriesData = await retriesRes.json();
-        setRetries(retriesData.data || []);
-      }
-
-      // Calculate risk distribution
-      if (events.length > 0) {
-        const dist = [
-          { name: "LOW", value: 0, color: "#00D4AA" },
-          { name: "MEDIUM", value: 0, color: "#F59E0B" },
-          { name: "HIGH", value: 0, color: "#F97316" },
-          { name: "CRITICAL", value: 0, color: "#EF4444" }
-        ];
-        events.forEach((e: any) => {
-          const level = e.riskScore >= 70 ? "CRITICAL" : e.riskScore >= 50 ? "HIGH" : e.riskScore >= 30 ? "MEDIUM" : "LOW";
-          const idx = dist.findIndex(d => d.name === level);
-          if (idx >= 0) dist[idx].value++;
-        });
-        setRiskDist(dist.filter(d => d.value > 0));
-      }
-    } catch (error) {
-      console.error("[WarRoom] Fetch error:", error);
-    }
-  };
-
-  useEffect(() => {
-    checkHealth();
-    fetchData();
-
-    pollRef.current = setInterval(() => {
-      checkHealth();
-      fetchData();
-    }, 3000);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  const pipelineStages = stages.length > 0 ? stages : [
-    { name: "Validate", total: 0, successRate: 0, avgLatency: 0 },
-    { name: "Enrich", total: 0, successRate: 0, avgLatency: 0 },
-    { name: "Classify", total: 0, successRate: 0, avgLatency: 0 },
-    { name: "Transform", total: 0, successRate: 0, avgLatency: 0 },
-    { name: "Persist", total: 0, successRate: 0, avgLatency: 0 },
-    { name: "Notify", total: 0, successRate: 0, avgLatency: 0 },
-    { name: "Audit", total: 0, successRate: 0, avgLatency: 0 }
-  ];
+export default function BifrostTechnical() {
+  const GITHUB_BASE = "https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE/blob/main";
 
   return (
-    <main style={{ 
-      background: "#0a0a0a", 
-      color: "#fff", 
-      fontFamily: "'Inter', system-ui, sans-serif",
-      minHeight: "100vh"
-    }}>
+    <div style={{ backgroundColor: "#0a0a0a", color: "#fff", minHeight: "100vh", fontFamily: "monospace", paddingBottom: "10rem" }}>
+      <Head>
+        <title>Bifrost | Technical Credibility</title>
+      </Head>
+
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+        .glass-card {
+          background: rgba(18, 18, 18, 0.8);
+          border: 1px solid rgba(124, 58, 237, 0.2);
+          border-radius: 12px;
+          padding: 2rem;
+          margin-bottom: 2rem;
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 3px; }
-        .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .code-block {
+          background: #000;
+          border: 1px solid #1a1a1a;
+          border-radius: 8px;
+          padding: 1.5rem;
+          overflow-x: auto;
+          font-size: 0.9rem;
+          color: #a1a1aa;
+          margin: 1rem 0;
+        }
+        .pill {
+          background: rgba(124, 58, 237, 0.1);
+          border: 1px solid rgba(124, 58, 237, 0.3);
+          color: #A855F7;
+          padding: 0.5rem 1rem;
+          border-radius: 9999px;
+          font-size: 0.8rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+        .pill:hover {
+          background: rgba(124, 58, 237, 0.2);
+          border-color: #A855F7;
+        }
+        .service-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 4rem;
+        }
+        .principle-card {
+          background: #0f0f0f;
+          border: 1px solid #1a1a1a;
+          padding: 1.5rem;
+          border-radius: 12px;
+        }
+        .violation {
+          border-top: 1px solid #27272a;
+          margin-top: 1rem;
+          padding-top: 1rem;
+          color: #ef4444;
+          font-size: 0.85rem;
+        }
+        .section-title {
+          font-size: 2.5rem;
+          font-weight: 900;
+          margin-bottom: 1rem;
+          color: #fff;
+        }
+        .section-subtitle {
+          color: #71717a;
+          font-size: 1.2rem;
+          margin-bottom: 3rem;
+        }
+        .flow-diagram {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1rem;
+          flex-wrap: wrap;
+          padding: 3rem;
+          background: #050505;
+          border-radius: 12px;
+          border: 1px dashed #27272a;
+        }
+        .flow-step {
+          padding: 0.75rem 1.5rem;
+          border: 1px solid #3f3f46;
+          border-radius: 4px;
+          background: #111;
+        }
       `}</style>
 
-      {/* Header */}
-      <header style={{
-        background: "rgba(10, 10, 10, 0.95)",
-        borderBottom: "1px solid rgba(124, 58, 237, 0.2)",
-        padding: "1.5rem 2rem",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        backdropFilter: "blur(20px)"
-      }}>
-        <div style={{ maxWidth: "1800px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {/* SECTION 1 — HERO */}
+      <section style={{ padding: "8rem 2rem", textAlign: "center" }}>
+        <div style={{ display: "inline-block", padding: "0.4rem 1rem", border: "1px solid #7C3AED", color: "#7C3AED", borderRadius: "4px", fontSize: "0.8rem", fontWeight: "900", marginBottom: "2rem" }}>
+          ONE EVENT. ONE PIPELINE. ONE TRUTH.
+        </div>
+        <h1 style={{ fontSize: "clamp(2rem, 5vw, 4rem)", fontWeight: "900", marginBottom: "1.5rem", letterSpacing: "-0.04em" }}>
+          BIFROST — Where Every Event Becomes<br />a Verifiable System Action
+        </h1>
+        <p style={{ fontSize: "1.25rem", color: "#a1a1aa", maxWidth: "800px", margin: "0 auto", lineHeight: 1.6 }}>
+          Deterministic event orchestration for AI systems.<br />
+          No duplication. No hidden state. No ambiguity.
+        </p>
+      </section>
+
+      {/* SECTION 2 — DESIGNER DIAGRAM */}
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}>
+        <img src="/bifrost.png" alt="Bifrost Architecture" style={{ width: "100%", borderRadius: "12px", border: "1px solid #1a1a1a" }} />
+        <div style={{ marginTop: "1rem", color: "#52525b", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>Diagram → Service Map</div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "2rem" }}>
+          {[
+            { name: "Ingest", path: "/lib/bifrost/ingest.ts" },
+            { name: "Validate", path: "/lib/contracts/validate.ts" },
+            { name: "Enrich", path: "/lib/bifrost/enrich.ts" },
+            { name: "Score", path: "/lib/bifrost/score.ts" },
+            { name: "Route", path: "/lib/bifrost/route.ts" },
+            { name: "Execute", path: "/lib/bifrost/pipeline.ts" },
+            { name: "Audit", path: "/lib/bifrost/audit.ts" }
+          ].map(p => (
+            <a key={p.name} href={`${GITHUB_BASE}${p.path}`} target="_blank" rel="noopener noreferrer" className="pill">
+              <Code size={14} /> {p.name} → {p.path.split('/').pop()}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* SECTION 3 — ORCHESTRATION MODEL */}
+      <section style={{ maxWidth: "1200px", margin: "10rem auto", padding: "0 2rem" }}>
+        <h2 className="section-title">Orchestration Model</h2>
+        <div className="glass-card">
+          <p style={{ lineHeight: 1.8, fontSize: "1.1rem" }}>
+            Bifrost uses event-driven sequential pipelines.<br />
+            Each service consumes and emits typed events.<br />
+            No direct service-to-service calls.<br />
+            No shared mutable state.<br />
+            All state changes occur through events.
+          </p>
+        </div>
+
+        <div className="flow-diagram">
+          <span className="flow-step">Event</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">[Intake]</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">[Validate]</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">[Score]</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">[Route]</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">[Execute]</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">[Audit]</span>
+          <ChevronRight size={16} color="#3f3f46" />
+          <span className="flow-step">Output</span>
+        </div>
+
+        <div style={{ marginTop: "2rem", padding: "1.5rem", borderLeft: "2px solid #7C3AED", background: "rgba(124, 58, 237, 0.05)" }}>
+          <p style={{ margin: 0 }}>No service can mutate global state. All state changes occur through events only.</p>
+        </div>
+      </section>
+
+      {/* SECTION 4 — EVENT CONTRACT STANDARD */}
+      <section style={{ maxWidth: "1200px", margin: "10rem auto", padding: "0 2rem" }}>
+        <h2 className="section-title">The Event Contract</h2>
+        <p className="section-subtitle">Every event in Bifrost must conform to this exact schema. No exceptions.</p>
+
+        <pre className="code-block">
+{`{
+  "id": "evt_7f3a9c2b",
+  "type": "invoice.created",
+  "timestamp": "2026-04-29T14:23:01.000Z",
+  "source": "crm/opportunities",
+  "payload": {
+    "client": "Nova Corp",
+    "amount": 12500,
+    "currency": "USD"
+  },
+  "metadata": {
+    "trace_id": "sk-7f3a9c2b-x9k2",
+    "version": "v1",
+    "schema_version": "1.0.0",
+    "idempotency_key": "inv_novacorp_20260429"
+  }
+}`}
+        </pre>
+
+        <h3 style={{ fontSize: "1.5rem", marginTop: "4rem", marginBottom: "1.5rem" }}>Schema Versioning Strategy</h3>
+        <div className="glass-card">
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, lineHeight: 2 }}>
+            <li><span style={{ color: "#7C3AED" }}>v1 (current)</span> → All fields above required</li>
+            <li><span style={{ color: "#2DD4BF" }}>v2 (planned)</span> → Adds enrichment metadata</li>
+            <li><span style={{ fontWeight: "bold" }}>Backward compatibility:</span> v1 events always valid in v2</li>
+          </ul>
+          <p style={{ marginTop: "1.5rem", borderTop: "1px solid #1a1a1a", paddingTop: "1.5rem", color: "#a1a1aa" }}>
+            Rule: "New versions never break old contracts. Old events are always processable."
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 5 — IDEMPOTENCY + DETERMINISM */}
+      <section style={{ maxWidth: "1200px", margin: "10rem auto", padding: "0 2rem" }}>
+        <h2 className="section-title">Determinism Guarantee</h2>
+        <div className="glass-card">
+          <p style={{ lineHeight: 1.8 }}>
+            If you run the same event twice — the system produces the same result.<br /><br />
+            Bifrost enforces idempotency via event IDs. Duplicate events are detected via
+            idempotency_key and ignored or reconciled.<br /><br />
+            Every event ID is unique. Every outcome is traceable. Same input always produces same audit trail.
+          </p>
+        </div>
+        <pre className="code-block">
+{`// Duplicate detection
+const existing = await prisma.bifrostEvent.findFirst({
+  where: {
+    payload: { path: ['metadata', 'idempotency_key'],
+    equals: event.metadata.idempotency_key }
+  }
+})
+if (existing) return {
+  status: 'duplicate_ignored',
+  original: existing.id
+}`}
+        </pre>
+      </section>
+
+      {/* SECTION 6 — 5 SERVICE BREAKDOWN */}
+      <section style={{ maxWidth: "1200px", margin: "10rem auto", padding: "0 2rem" }}>
+        <h2 className="section-title">5 Services. One Responsibility Each.</h2>
+        <p className="section-subtitle">No god objects. No hidden complexity.</p>
+
+        <div className="service-grid">
+          {/* SERVICE 1 */}
           <div>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.25rem" }}>
-              <span style={{ color: "#7C3AED" }}>Bifrost</span>
-              <span style={{ color: "#fff", marginLeft: "0.5rem" }}>Intelligence Bridge</span>
-            </h1>
-            <div style={{ color: "#52525b", fontSize: "0.85rem", fontFamily: "monospace" }}>
-              v2.2.0 — War Room
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <StatusLight label="Bifrost Bridge" status={healthStatus.bifrost} note="api/health" />
-            <StatusLight label="ML Service" status={healthStatus.ml} note={process.env.ML_SERVICE_URL || "localhost:8001"} />
-            <StatusLight label="Database" status={healthStatus.db} note="Prisma/PostgreSQL" />
-            <StatusLight label="Event Bus" status={healthStatus.events} note="Real-time stream" />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div style={{ maxWidth: "1800px", margin: "0 auto", padding: "2rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
-          
-          {/* LEFT PANEL - Live Event Feed */}
-          <div style={{
-            background: "#111",
-            borderRadius: "12px",
-            border: "1px solid rgba(124, 58, 237, 0.15)",
-            overflow: "hidden"
-          }}>
-            <div style={{
-              padding: "1rem 1.5rem",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}>
-              <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff" }}>
-                Live Event Feed
-              </h2>
-              <span style={{ color: "#00D4AA", fontSize: "0.85rem", fontFamily: "monospace" }}>
-                {events.length} events
-              </span>
-            </div>
-            <div style={{ maxHeight: "600px", overflowY: "auto", padding: "1rem" }}>
-              {events.length === 0 ? (
-                <div style={{ color: "#52525b", textAlign: "center", padding: "3rem", fontSize: "0.9rem" }}>
-                  Waiting for events...
-                </div>
-              ) : (
-                events.map((event: any, idx: number) => (
-                  <div key={idx} style={{
-                    padding: "0.75rem",
-                    marginBottom: "0.5rem",
-                    background: "rgba(255,255,255,0.02)",
-                    borderRadius: "8px",
-                    borderLeft: `3px solid ${eventTypeColors[event.source || 'bifrost'] || '#7C3AED'}`
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                      <EventTypeBadge type={event.eventType || event.type} />
-                      <ScorePill level={
-                        event.riskScore >= 70 ? "CRITICAL" : 
-                        event.riskScore >= 50 ? "HIGH" : 
-                        event.riskScore >= 30 ? "MEDIUM" : "LOW"
-                      } />
-                    </div>
-                    <div style={{ 
-                      color: "#71717a", 
-                      fontSize: "0.75rem", 
-                      fontFamily: "monospace",
-                      marginBottom: "0.25rem",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {event.trace_id || event.id}
-                    </div>
-                    {event.flags && event.flags.length > 0 && (
-                      <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
-                        {event.flags.map((flag: string, i: number) => (
-                          <FlagTag key={i} flag={flag} />
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ color: "#52525b", fontSize: "0.7rem", marginTop: "0.5rem" }}>
-                      {new Date(event.timestamp || event.createdAt).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* CENTER PANEL - Pipeline Stages */}
-          <div style={{
-            background: "#111",
-            borderRadius: "12px",
-            border: "1px solid rgba(124, 58, 237, 0.15)",
-            overflow: "hidden"
-          }}>
-            <div style={{
-              padding: "1rem 1.5rem",
-              borderBottom: "1px solid rgba(255,255,255,0.06)"
-            }}>
-              <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff" }}>
-                Pipeline Stages
-              </h2>
-            </div>
-            <div style={{ padding: "1rem" }}>
-              {pipelineStages.map((stage: any, idx: number) => (
-                <div key={idx} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "0.75rem",
-                  marginBottom: "0.5rem",
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: "8px"
-                }}>
-                  <div style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
-                    marginRight: "1rem",
-                    flexShrink: 0
-                  }}>
-                    {idx + 1}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: "#fff", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.25rem" }}>
-                      {stage.name}
-                    </div>
-                    <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.75rem", color: "#71717a" }}>
-                      <span>Total: <span style={{ color: "#fff", fontFamily: "monospace" }}>{stage.total || 0}</span></span>
-                      <span>Success: <span style={{ 
-                        color: (stage.successRate || 0) > 95 ? "#00D4AA" : (stage.successRate || 0) > 80 ? "#F59E0B" : "#EF4444",
-                        fontFamily: "monospace" 
-                      }}>{(stage.successRate || 0).toFixed(1)}%</span></span>
-                      <span>Latency: <span style={{ color: "#fff", fontFamily: "monospace" }}>{stage.avgLatency || 0}ms</span></span>
-                    </div>
-                  </div>
-                  {(stage.lastError || stage.error) && (
-                    <div style={{ 
-                      background: "rgba(239, 68, 68, 0.1)", 
-                      padding: "4px 8px", 
-                      borderRadius: "4px",
-                      fontSize: "0.7rem",
-                      color: "#EF4444",
-                      maxWidth: "150px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {stage.lastError || stage.error}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT PANEL - Risk Distribution */}
-          <div style={{
-            background: "#111",
-            borderRadius: "12px",
-            border: "1px solid rgba(124, 58, 237, 0.15)",
-            overflow: "hidden"
-          }}>
-            <div style={{
-              padding: "1rem 1.5rem",
-              borderBottom: "1px solid rgba(255,255,255,0.06)"
-            }}>
-              <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff" }}>
-                Risk Distribution
-              </h2>
-            </div>
-            <div style={{ padding: "1rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              {riskDist.length > 0 ? (
-                <>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={riskDist}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {riskDist.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          background: "#1a1a1a", 
-                          border: "1px solid #333",
-                          borderRadius: "8px",
-                          color: "#fff"
-                        }} 
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{ display: "flex", gap: "1.5rem", marginTop: "1rem" }}>
-                    {riskDist.map((item, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <div style={{ 
-                          width: "12px", 
-                          height: "12px", 
-                          borderRadius: "3px", 
-                          background: item.color 
-                        }} />
-                        <span style={{ color: "#a1a1aa", fontSize: "0.85rem" }}>{item.name}</span>
-                        <span style={{ color: "#fff", fontSize: "0.85rem", fontFamily: "monospace", fontWeight: 600 }}>
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div style={{ 
-                  height: "250px", 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "center",
-                  color: "#52525b",
-                  fontSize: "0.9rem"
-                }}>
-                  No risk data yet
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM - Retry Queue */}
-        <div style={{
-          background: "#111",
-          borderRadius: "12px",
-          border: "1px solid rgba(239, 68, 68, 0.2)",
-          overflow: "hidden"
-        }}>
-          <div style={{
-            padding: "1rem 1.5rem",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
-          }}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff" }}>
-              Retry Queue
-              {retries.length > 0 && (
-                <span style={{ 
-                  background: "rgba(239, 68, 68, 0.2)", 
-                  color: "#EF4444", 
-                  padding: "2px 8px", 
-                  borderRadius: "10px", 
-                  fontSize: "0.75rem", 
-                  marginLeft: "0.75rem" 
-                }}>
-                  {retries.length} pending
-                </span>
-              )}
-            </h2>
-          </div>
-          <div style={{ overflowX: "auto" }}>
-            {retries.length === 0 ? (
-              <div style={{ color: "#52525b", textAlign: "center", padding: "2rem", fontSize: "0.9rem" }}>
-                No pending retries — all clear!
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid #27272a", paddingBottom: "1rem", marginBottom: "2rem" }}>
+              <div>
+                <h3 style={{ fontSize: "1.75rem", fontWeight: "900" }}>SERVICE 1: Event Intake Service</h3>
+                <div style={{ color: "#7C3AED", fontSize: "0.9rem" }}>File: /lib/bifrost/ingest.ts</div>
               </div>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    {["Event ID", "Retry Count", "Next Retry", "Last Error", "Action"].map((h) => (
-                      <th key={h} style={{ 
-                        padding: "0.75rem 1rem", 
-                        textAlign: "left", 
-                        color: "#71717a", 
-                        fontSize: "0.8rem", 
-                        fontWeight: 600,
-                        fontFamily: "monospace"
-                      }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {retries.map((item: any, idx: number) => (
-                    <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                      <td style={{ 
-                        padding: "0.75rem 1rem", 
-                        fontFamily: "monospace", 
-                        fontSize: "0.8rem", 
-                        color: "#fff",
-                        maxWidth: "200px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
-                        {item.eventId || item.id}
-                      </td>
-                      <td style={{ padding: "0.75rem 1rem", fontSize: "0.85rem", color: "#a1a1aa" }}>
-                        <span style={{ 
-                          background: item.retryCount > 3 ? "rgba(239, 68, 68, 0.2)" : "rgba(245, 158, 11, 0.2)",
-                          color: item.retryCount > 3 ? "#EF4444" : "#F59E0B",
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                          fontSize: "0.75rem",
-                          fontWeight: 600
-                        }}>
-                          {item.retryCount || 0}
-                        </span>
-                      </td>
-                      <td style={{ padding: "0.75rem 1rem", fontSize: "0.85rem", color: "#71717a", fontFamily: "monospace" }}>
-                        {item.nextRetry ? new Date(item.nextRetry).toLocaleTimeString() : "—"}
-                      </td>
-                      <td style={{ 
-                        padding: "0.75rem 1rem", 
-                        fontSize: "0.8rem", 
-                        color: "#EF4444",
-                        maxWidth: "300px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
-                        {item.lastError || item.error || "Unknown error"}
-                      </td>
-                      <td style={{ padding: "0.75rem 1rem" }}>
-                        <button
-                          onClick={() => {
-                            fetch(`/api/bifrost/retry/${item.eventId || item.id}`, { method: "POST" })
-                              .then(() => fetchData());
-                          }}
-                          style={{
-                            background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-                            color: "#fff",
-                            border: "none",
-                            padding: "6px 16px",
-                            borderRadius: "6px",
-                            fontSize: "0.8rem",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            transition: "transform 0.2s"
-                          }}
-                          onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-                          onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-                        >
-                          Retry Now
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            </div>
+            <p style={{ fontSize: "1.1rem", marginBottom: "2rem" }}>Responsibility: "Receives raw events and persists them before any processing begins."</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Input/Output</h4>
+                <pre className="code-block">{`type Input = RawBifrostEvent\ntype Output = PersistedEvent`}</pre>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Code</h4>
+                <pre className="code-block">{`export async function ingest(e) {\n  return prisma.bifrostEvent.create({ ... })\n}`}</pre>
+              </div>
+            </div>
+            <div className="principle-card" style={{ borderLeft: "4px solid #ef4444" }}>
+              <h4 style={{ fontSize: "0.9rem", color: "#ef4444", marginBottom: "0.5rem" }}>FAILURE BEHAVIOR</h4>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>"On failure → returns INTAKE_FAILED error. Event is never lost — retry queue activated. Pipeline halts. No partial processing."</p>
+            </div>
+          </div>
+
+          {/* SERVICE 2 */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid #27272a", paddingBottom: "1rem", marginBottom: "2rem" }}>
+              <div>
+                <h3 style={{ fontSize: "1.75rem", fontWeight: "900" }}>SERVICE 2: Contract Validation Service</h3>
+                <div style={{ color: "#7C3AED", fontSize: "0.9rem" }}>File: /lib/contracts/validate.ts</div>
+              </div>
+            </div>
+            <p style={{ fontSize: "1.1rem", marginBottom: "2rem" }}>Responsibility: "Validates every event against the TypeScript contract. Rejects non-compliant events."</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Input/Output</h4>
+                <pre className="code-block">{`type Input = PersistedEvent\ntype Output = ValidatedEvent | Error`}</pre>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Code</h4>
+                <pre className="code-block">{`export function validate(e) {\n  const res = validateSchema(e)\n  return res.valid ? e : res.err\n}`}</pre>
+              </div>
+            </div>
+            <div className="principle-card" style={{ borderLeft: "4px solid #ef4444" }}>
+              <h4 style={{ fontSize: "0.9rem", color: "#ef4444", marginBottom: "0.5rem" }}>FAILURE BEHAVIOR</h4>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>"On failure → emits EVENT_VALIDATION_FAILED. Pipeline halts immediately. Error logged to observability layer. Caller receives violation list."</p>
+            </div>
+          </div>
+
+          {/* SERVICE 3 */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid #27272a", paddingBottom: "1rem", marginBottom: "2rem" }}>
+              <div>
+                <h3 style={{ fontSize: "1.75rem", fontWeight: "900" }}>SERVICE 3: Risk Scoring Service</h3>
+                <div style={{ color: "#7C3AED", fontSize: "0.9rem" }}>File: /lib/bifrost/score.ts</div>
+              </div>
+            </div>
+            <p style={{ fontSize: "1.1rem", marginBottom: "2rem" }}>Responsibility: "Calculates risk score 0-100 using rules engine and ML fallback."</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Input/Output</h4>
+                <pre className="code-block">{`type Input = ValidatedEvent\ntype Output = ScoredEvent`}</pre>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Code</h4>
+                <pre className="code-block">{`export async function score(e) {\n  const ml = await scoreWithML(e)\n  return { ...e, score: ml ?? rules(e) }\n}`}</pre>
+              </div>
+            </div>
+            <div className="principle-card" style={{ borderLeft: "4px solid #ef4444" }}>
+              <h4 style={{ fontSize: "0.9rem", color: "#ef4444", marginBottom: "0.5rem" }}>FAILURE BEHAVIOR</h4>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>"ML service failure → automatic fallback to TypeScript rules engine. Score is never null. Pipeline never halts due to scoring failure."</p>
+            </div>
+          </div>
+
+          {/* SERVICE 4 */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid #27272a", paddingBottom: "1rem", marginBottom: "2rem" }}>
+              <div>
+                <h3 style={{ fontSize: "1.75rem", fontWeight: "900" }}>SERVICE 4: Routing Service</h3>
+                <div style={{ color: "#7C3AED", fontSize: "0.9rem" }}>File: /lib/bifrost/route.ts</div>
+              </div>
+            </div>
+            <p style={{ fontSize: "1.1rem", marginBottom: "2rem" }}>Responsibility: "Determines the correct destination and action for each event."</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Input/Output</h4>
+                <pre className="code-block">{`type Input = ScoredEvent\ntype Output = RoutedEvent`}</pre>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Code</h4>
+                <pre className="code-block">{`export function route(e) {\n  const res = routingRules.eval(e)\n  return { ...e, destination: res }\n}`}</pre>
+              </div>
+            </div>
+            <div className="principle-card" style={{ borderLeft: "4px solid #ef4444" }}>
+              <h4 style={{ fontSize: "0.9rem", color: "#ef4444", marginBottom: "0.5rem" }}>FAILURE BEHAVIOR</h4>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>"On failure → routes to DEFAULT_REVIEW queue. No event is dropped. Human review triggered automatically."</p>
+            </div>
+          </div>
+
+          {/* SERVICE 5 */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid #27272a", paddingBottom: "1rem", marginBottom: "2rem" }}>
+              <div>
+                <h3 style={{ fontSize: "1.75rem", fontWeight: "900" }}>SERVICE 5: Audit Service</h3>
+                <div style={{ color: "#7C3AED", fontSize: "0.9rem" }}>File: /lib/bifrost/audit.ts</div>
+              </div>
+            </div>
+            <p style={{ fontSize: "1.1rem", marginBottom: "2rem" }}>Responsibility: "Creates an immutable, append-only audit record for every event."</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Input/Output</h4>
+                <pre className="code-block">{`type Input = ProcessedEvent\ntype Output = AuditRecord`}</pre>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#52525b" }}>Code</h4>
+                <pre className="code-block">{`export async function audit(e) {\n  return prisma.auditLog.create({ ... })\n}`}</pre>
+              </div>
+            </div>
+            <div className="principle-card" style={{ borderLeft: "4px solid #ef4444" }}>
+              <h4 style={{ fontSize: "0.9rem", color: "#ef4444", marginBottom: "0.5rem" }}>FAILURE BEHAVIOR</h4>
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>"Audit is the LAST stage. It never blocks. If audit write fails → emergency log to separate append-only store. Audit failure is a P0 alert. No audit = system violation."</p>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </section>
+
+      {/* SECTION 7 — BIFROST PRINCIPLES */}
+      <section style={{ maxWidth: "1200px", margin: "10rem auto", padding: "0 2rem" }}>
+        <h2 className="section-title">6 Principles. All Enforceable.</h2>
+        <p className="section-subtitle">Not philosophy. Engineering requirements.</p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "1.5rem" }}>
+          {[
+            { p: "Every event must produce a traceable audit record.", v: "Processing an event without creating an audit entry = system violation. Triggers P0 alert." },
+            { p: "Contracts first, always.", v: "Accepting an event without schema validation = CONTRACT_BYPASS. Blocked at intake." },
+            { p: "No service can mutate global state.", v: "Writing to DB outside pipeline = UNAUTHORIZED_WRITE. Detectable via observability layer." },
+            { p: "No event is ever dropped.", v: "Failed events go to retry queue. Max 3 retries then dead-letter queue. Never silently discarded." },
+            { p: "Same input always produces same output.", v: "Non-deterministic behavior = audit log inconsistency. Idempotency key enforces this." },
+            { p: "AI augments decisions. Humans approve escalations.", v: "Auto-approving HIGH risk events without human review = ESCALATION_BYPASS. Blocked by routing service." }
+          ].map((item, i) => (
+            <div key={i} className="principle-card">
+              <div style={{ fontWeight: "900", marginBottom: "1rem", color: "#fff" }}>PRINCIPLE {i+1}</div>
+              <div style={{ fontSize: "1.1rem", marginBottom: "1rem" }}>"{item.p}"</div>
+              <div className="violation">
+                <strong>Violation:</strong> "{item.v}"
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SECTION 8 — GITHUB DEEP LINKS */}
+      <section style={{ maxWidth: "1200px", margin: "10rem auto", padding: "0 2rem", textAlign: "center" }}>
+        <h2 className="section-title">Verify It Yourself</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "3rem" }}>
+          {[
+            { name: "Event Contracts", path: "/lib/contracts/" },
+            { name: "Bifrost Services", path: "/lib/bifrost/" },
+            { name: "Pipeline Engine", path: "/lib/bifrost/pipeline.ts" },
+            { name: "Validation", path: "/lib/contracts/validate.ts" },
+            { name: "Observability", path: "/lib/observability/" },
+            { name: "Full Repo", path: "https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE", absolute: true }
+          ].map(link => (
+            <a
+              key={link.name}
+              href={link.absolute ? link.path : `${GITHUB_BASE}${link.path}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ padding: "1.5rem", border: "1px solid #1a1a1a", borderRadius: "8px", textDecoration: "none", color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#050505" }}
+            >
+              <span style={{ fontWeight: "700" }}>{link.name}</span>
+              <ExternalLink size={16} color="#7C3AED" />
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* SECTION 9 — CLOSING */}
+      <section style={{ padding: "10rem 2rem", textAlign: "center", background: "radial-gradient(circle at center, rgba(124, 58, 237, 0.05) 0%, transparent 70%)" }}>
+        <h2 style={{ fontSize: "clamp(2rem, 5vw, 4rem)", fontWeight: "900", marginBottom: "1rem" }}>ONE EVENT. ONE PIPELINE. ONE TRUTH.</h2>
+        <p style={{ color: "#52525b", fontSize: "1.2rem", marginBottom: "4rem" }}>No duplication. No hidden state. No ambiguity.</p>
+        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center" }}>
+          <a href="https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE" target="_blank" rel="noopener noreferrer" style={{ padding: "1rem 2.5rem", background: "#fff", color: "#000", textDecoration: "none", borderRadius: "8px", fontWeight: "900" }}>View the Repo →</a>
+          <Link href="/login" style={{ padding: "1rem 2.5rem", border: "1px solid #7C3AED", color: "#7C3AED", textDecoration: "none", borderRadius: "8px", fontWeight: "900" }}>Deploy Free →</Link>
+        </div>
+      </section>
+    </div>
   );
 }
