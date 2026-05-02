@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
-  ArrowRight,
   Shield,
   Zap,
   Database,
