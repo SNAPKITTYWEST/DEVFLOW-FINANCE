@@ -249,48 +249,52 @@ export default function Landing() {
           ⚡ Built in public · Governed by AI · v2.2.0
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          style={{
-            fontSize: "clamp(3rem, 10vw, 7rem)",
-            fontWeight: 900,
-            lineHeight: 0.9,
-            marginBottom: "2.5rem",
-            letterSpacing: "-0.06em",
-            textTransform: "uppercase"
-          }}
-          className="purple-teal-gradient-text"
-        >
-          ONE EVENT. ONE PIPELINE. ONE TRUTH.
-        </motion.h1>
+         <motion.h1
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6, delay: 0.2 }}
+           style={{
+             fontSize: "clamp(3rem, 10vw, 7rem)",
+             fontWeight: 900,
+             lineHeight: 0.9,
+             marginBottom: "2.5rem",
+             letterSpacing: "-0.06em",
+             textTransform: "uppercase"
+           }}
+           className="purple-teal-gradient-text"
+         >
+           AI agents that run your operations
+           in real time — fully auditable,
+           fully observable.
+         </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="zinc-400"
-          style={{ fontSize: "clamp(1.2rem, 3vw, 1.8rem)", maxWidth: "850px", marginBottom: "4rem", lineHeight: 1.4, fontWeight: "500" }}
-        >
-          The AI-native operating system that converts
-          every business action into a structured,
-          auditable outcome in real time.
-        </motion.p>
+         <motion.p
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6, delay: 0.4 }}
+           className="zinc-400"
+           style={{ fontSize: "clamp(1.2rem, 3vw, 1.8rem)", maxWidth: "850px", marginBottom: "4rem", lineHeight: 1.4, fontWeight: "500" }}
+         >
+           Built in plain English. Governed by Bifrost.
+           Every action traced, scored, and audited automatically.
+         </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}
-        >
-          <button onClick={() => document.getElementById('demo')?.scrollIntoView({behavior: 'smooth'})} className="btn-purple-gradient" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", fontSize: "1.125rem", fontWeight: "900", cursor: "pointer" }}>
-            Run the Demo →
-          </button>
-          <button onClick={() => document.getElementById('architecture')?.scrollIntoView({behavior: 'smooth'})} className="btn-ghost" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", fontSize: "1.125rem", fontWeight: "900", cursor: "pointer", borderColor: "#7C3AED" }}>
-            View Architecture
-          </button>
-        </motion.div>
+         <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6, delay: 0.6 }}
+           style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}
+         >
+           <a href="/bifrost" className="btn-purple-gradient" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", fontSize: "1.125rem", fontWeight: "900", textDecoration: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+             Watch Live System →
+           </a>
+           <a href="https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE" target="_blank" rel="noopener noreferrer" className="btn-ghost" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", fontSize: "1.125rem", fontWeight: "900", textDecoration: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+             Explore Open Source →
+           </a>
+           <Link href="/login" className="btn-purple-gradient" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", fontSize: "1.125rem", fontWeight: "900", textDecoration: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+             Deploy Free →
+           </Link>
+         </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
