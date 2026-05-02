@@ -1,45 +1,63 @@
 # SnapKitty Sovereign OS
+> Powerful AI should not be limited to big enterprises.
 
-A type-safe enterprise platform featuring the **Bifrost** standardized 7-stage event pipeline and ML-driven orchestration.
+![Build Status](https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE/actions/workflows/azure-static-web-apps-icy-pond-0819ba71e.yml/badge.svg)
+![Live](https://img.shields.io/badge/live-collectivekitty.com-00D4AA)
+![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20TypeScript-7C3AED)
 
-## 🏗 Core Architecture: The Bifrost Pipeline
+## 🌐 Live
+[collectivekitty.com](https://collectivekitty.com)
 
-All events within the Sovereign OS follow the standardized 7-stage Bifrost pipeline to ensure consistency, auditability, and intelligent routing.
+## 🧠 What is SnapKitty?
+SnapKitty Sovereign OS is an AI-native enterprise 
+operating system for high-velocity freelancers 
+and collectives. Built in public. Governed by AI agents.
 
-1.  **Validate**: Schema validation using `EventTypes` from `@/lib/contracts/event.schema`.
-2.  **Ingest**: Secure entry point for internal and external telemetry.
-3.  **Score**: ML-driven priority and risk assessment.
-    *   *Primary*: Python ML service (`:8001`)
-    *   *Fallback*: TypeScript scoring logic in `lib/bifrost/score.ts`.
-4.  **Route**: Intelligent event distribution (e.g., Procurement Requisitions, System Alerts).
-5.  **Persist**: Hardened storage in PostgreSQL via Prisma (see `BifrostEvent` model).
-6.  **Notify**: (In Progress) Stakeholder alerting via Slack/Email.
-7.  **Audit**: Immutable logging of pipeline transitions for compliance.
+CRM + ERP + Procurement + Payments — one platform.
+Powered by Bifrost Intelligence Bridge.
 
-## 🛠 Tech Stack
+## ⚡ Bifrost Pipeline
+Every action in the system flows through 7 stages:
 
-- **Framework**: Next.js 16.2.4 (App Router)
-- **Language**: TypeScript (Strict Mode Enabled)
-- **UI**: React 19.2.4 & Tailwind CSS
-- **Database**: Prisma + PostgreSQL
-- **Orchestration**: Hybrid TS/Python ML Pipeline
+```
+Validate → Enrich → Classify → Transform → Persist → Notify → Audit
+```
 
-## 🚀 Getting Started
+Every event is scored, routed, and audited automatically.
 
-1.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
-2.  **Run Development Server**:
-    ```bash
-    npm run dev
-    ```
-3.  **Type Check**:
-    ```bash
-    npx tsc --noEmit
-    ```
+## 🏗️ Stack
+- **Frontend**: Next.js 16 + TypeScript + Tailwind CSS
+- **Database**: Neon Postgres + Prisma ORM
+- **Auth**: Azure Entra ID + NextAuth
+- **Middleware**: Bifrost (custom event-driven engine)
+- **ML Layer**: Python FastAPI (scoring + intelligence)
+- **Deploy**: Azure Static Web Apps + GitHub Actions
 
-## 🛡 Security & Type Safety
+## 📦 Modules
+| Module | Status | Description |
+|--------|--------|-------------|
+| CRM Pipeline | ✅ Live | Deal tracking + kanban |
+| Procurement | ✅ Live | POs + vendors + spend |
+| Bifrost Bridge | ✅ Live | Event middleware |
+| Finance | 🔄 Building | GL + invoicing |
+| ML Scoring | 🔄 Building | Python risk engine |
 
-- **Strict Mode**: Re-enabled in `tsconfig.json` to prevent enterprise regression.
-- **Contract Driven**: All events must implement the flattened `EventTypes` contract to pass the **Validate** stage.
+## 🤝 Contribute
+We build in public. All contributions welcome.
+
+- 🐛 [Report a bug](https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE/issues)
+- 💡 [Request a feature](https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE/issues)
+- 💰 [Support on Open Collective](https://opencollective.com)
+
+## 🏛️ Agent Team
+This system is built by a coordinated AI agent team:
+- **Claude** — Governor + Orchestrator
+- **Gemini** — Builder + Pipeline Engineer  
+- **OpenCode** — Execution + Deployment
+- **Kiwi** — Mayor + PR Admin + Architect
+
+## 📄 License
+MIT — Built with ❤️ by SnapKitty Collective
+
+---
+*Bifrost v2.2.0 — All Systems Operational*
