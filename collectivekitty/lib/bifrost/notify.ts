@@ -11,6 +11,9 @@ export interface NotificationPayload {
 /**
  * Stage 6: Notify
  * Standardized notification dispatcher for the Bifrost pipeline.
+ * @failure Single channel fail â†’ logged, others proceed
+ * @failure All channels fail â†’ pipeline proceeds (Notify is non-blocking)
+ * @failure Missing API keys â†’ warning logged, no halt
  */
 export async function sendNotification(payload: NotificationPayload) {
   const { title, message, level, channels, metadata } = payload;
