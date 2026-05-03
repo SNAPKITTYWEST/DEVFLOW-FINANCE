@@ -30,9 +30,13 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// --- Types ---
-type Stage = 'PROSPECTING' | 'QUALIFIED' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
+import { DealStage, DealId, ContactId, UserId } from '@/lib/types/branded';
+import { SearchBar } from '@/components/crm/SearchBar';
+import { FilterPanel, FilterState } from '@/components/crm/FilterPanel';
+import { QuickAddModal } from '@/components/crm/QuickAddModal';
+import { NotificationBadge } from '@/components/crm/NotificationBadge';
 
+// --- Types ---
 interface Activity {
   id: string;
   type: 'note' | 'call' | 'email';
@@ -42,12 +46,13 @@ interface Activity {
 }
 
 interface Deal {
-  id: string;
+  id: DealId;
   name: string;
   company: string;
   value: number;
-  stage: Stage;
+  stage: DealStage;
   owner: string;
+  ownerId: UserId;
   daysInStage: number;
   status: 'on_track' | 'at_risk' | 'stalled';
   expectedClose: string;

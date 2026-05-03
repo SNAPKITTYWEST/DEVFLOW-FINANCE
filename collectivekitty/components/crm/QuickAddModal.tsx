@@ -27,6 +27,29 @@ interface QuickAddModalProps {
   type: 'contact' | 'deal';
 }
 
+/**
+ * High-velocity entry point for creating new CRM records without leaving the
+ * current context.
+ *
+ * This modal facilitates the rapid capture of essential lead and opportunity
+ * data, enforcing fundamental validation rules and providing immediate feedback
+ * on submission status.
+ *
+ * @param isOpen - Controls the visibility of the modal.
+ * @param onClose - Callback to dismiss the modal and reset local form state.
+ * @param onSubmit - Async handler for record creation. Must return a QuickAddResult.
+ * @param type - Determines the schema and fields displayed ('contact' or 'deal').
+ *
+ * @example
+ * ```tsx
+ * <QuickAddModal
+ *   isOpen={showModal}
+ *   type="deal"
+ *   onSubmit={async (data) => createDeal(data)}
+ *   onClose={() => setShowModal(false)}
+ * />
+ * ```
+ */
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   isOpen,
   onClose,

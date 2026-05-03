@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Contact, Briefcase, Loader2, XCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ContactId, DealId, DealStage } from '@/lib/types/branded';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -26,6 +27,27 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
+/**
+ * Unified search interface for the CRM domain, allowing users to quickly locate
+ * key records across contacts and deals.
+ *
+ * This component provides a high-velocity search experience with debounced queries
+ * and keyboard navigation, specifically tailored for sales and relationship management
+ * workflows.
+ *
+ * @param onSearch - Async function to fetch search results based on the provided query.
+ *                   Must return a promise resolving to an array of branded SearchResult objects.
+ * @param onResultSelect - Callback triggered when a user selects a specific contact or deal.
+ * @param placeholder - Optional custom text for the search input. Defaults to 'Search contacts or deals...'.
+ *
+ * @example
+ * ```tsx
+ * <SearchBar
+ *   onSearch={async (q) => api.search(q)}
+ *   onResultSelect={(res) => navigate(`/crm/${res.type}/${res.id}`)}
+ * />
+ * ```
+ */
 export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
   onResultSelect,
@@ -131,7 +153,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
       <AnimatePresence>
         {(state.status !== 'idle' && state.status !== 'focused' || (state.status === 'focused' && query)) && (
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             id="search-results"
             role="listbox"
             className="absolute z-50 mt-2 w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl"
@@ -228,12 +253,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 )}
               </div>
             )}
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
 
-// Minimal AnimatePresence mock if framer-motion is not fully configured for this context
-const AnimatePresence = ({ children }: { children: React.ReactNode }) => <>{children}</>;
