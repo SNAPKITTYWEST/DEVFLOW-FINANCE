@@ -23,6 +23,31 @@ interface FilterPanelProps {
   availableTags: string[];
 }
 
+/**
+ * Advanced filtering sidebar for CRM data views, enabling multi-dimensional
+ * analysis of the sales pipeline and contact database.
+ *
+ * This component manages complex filter states including deal stages, ownership
+ * assignments, and temporal ranges, ensuring sales teams can focus on high-priority
+ * segments.
+ *
+ * @param state - Current active filter configuration.
+ * @param onChange - Callback function to update the global filter state.
+ * @param availableStages - List of valid deal stages to filter by (branded DealStage).
+ * @param availableOwners - Directory of users eligible for record ownership (branded UserId).
+ * @param availableTags - Metadata tags currently in use across the CRM records.
+ *
+ * @example
+ * ```tsx
+ * <FilterPanel
+ *   state={currentFilters}
+ *   onChange={setFilters}
+ *   availableStages={['PROSPECTING', 'QUALIFIED']}
+ *   availableOwners={[{ id: 'u1' as UserId, name: 'Alice' }]}
+ *   availableTags={['SaaS', 'Enterprise']}
+ * />
+ * ```
+ */
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   state,
   onChange,

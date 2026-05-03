@@ -13,6 +13,27 @@ interface NotificationBadgeProps {
   className?: string;
 }
 
+/**
+ * Visual indicator for pending actions and system alerts within the CRM dashboard.
+ *
+ * Used to highlight urgency levels for sales tasks, overdue deals, and
+ * high-priority communication needs. The badge uses semantic coloring and
+ * animations to signal severity to the user.
+ *
+ * @param count - The numerical value to display (max 99+).
+ * @param severity - Defines the visual urgency (info, warning, or critical).
+ * @param label - Accessibility text describing the context of the notification.
+ * @param className - Optional Tailwind CSS overrides.
+ *
+ * @example
+ * ```tsx
+ * <NotificationBadge
+ *   count={5}
+ *   severity="critical"
+ *   label="Overdue Follow-ups"
+ * />
+ * ```
+ */
 export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   count,
   severity,
