@@ -1,14 +1,42 @@
 /**
  * Bifrost Standard v1.0 - Event Schema
+ *
+ * @remarks
+ * This schema defines the contract for all events flowing through the Bifrost pipeline.
+ * Bifrost is the hallway - it routes events but does not own business logic.
  */
 
+import { EventType, TraceId } from '../types/branded';
+
+/**
+ * Standard event structure for the Bifrost pipeline
+ *
+ * @property event_type - Namespaced event identifier (e.g., "deal.created", "payment.received")
+ * @property source - System that originated the event (e.g., "crm", "stripe", "opencollective")
+ * @property payload - Event-specific data, validated by the receiving system
+ * @property timestamp - ISO 8601 timestamp of event creation
+ * @property trace_id - Unique identifier tracking the event through the entire pipeline
+ * @property version - Bifrost protocol version (currently "1.0")
+ *
+ * @example
+ * ```typescript
+ * const event: BifrostEvent = {
+ *   event_type: "deal.created",
+ *   source: "crm",
+ *   payload: { dealId: "deal_123", amount: 50000 },
+ *   timestamp: new Date().toISOString(),
+ *   trace_id: createTraceId(crypto.randomUUID()),
+ *   version: "1.0"
+ * };
+ * ```
+ */
 export interface BifrostEvent {
-  event_type: string;     // e.g., "deal.created", "payment.received"
-  source: string;         // e.g., "crm", "stripe", "opencollective"
+  event_type: EventType;
+  source: string;
   payload: Record<string, unknown>;
-  timestamp: string;      // ISO 8601
-  trace_id: string;       // Unique trace for the event lifecycle
-  version: string;        // "1.0"
+  timestamp: string;
+  trace_id: TraceId;
+  version: string;
 }
 
 export const BIFROST_VERSION = "1.0";
