@@ -4,6 +4,7 @@
 ![Build Status](https://github.com/SNAPKITTYWEST/DEVFLOW-FINANCE/actions/workflows/azure-static-web-apps-icy-pond-0819ba71e.yml/badge.svg)
 ![Live](https://img.shields.io/badge/live-collectivekitty.com-00D4AA)
 ![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20TypeScript-7C3AED)
+![License](https://img.shields.io/badge/license-BSL%201.1-orange)
 
 ## 🌐 Live
 [collectivekitty.com](https://collectivekitty.com)
@@ -57,7 +58,9 @@ This system is built by a coordinated AI agent team:
 - **Kiwi** — Mayor + PR Admin + Architect
 
 ## 📄 License
-MIT — Built with ❤️ by SnapKitty Collective
+Business Source License 1.1 — Non-production use permitted. Commercial licensing required for production use.
+
+See [LICENSE](LICENSE) for full terms. Contact collectivekitty.com for commercial licensing.
 
 ---
 *Bifrost v2.2.0 — All Systems Operational*
